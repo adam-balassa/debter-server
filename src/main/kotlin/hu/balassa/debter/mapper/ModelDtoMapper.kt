@@ -1,5 +1,6 @@
 package hu.balassa.debter.mapper
 
+import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.dto.response.CreateRoomResponse
 import hu.balassa.debter.dto.response.DebtResponse
 import hu.balassa.debter.dto.response.PaymentResponse
@@ -27,6 +28,12 @@ interface ModelDtoMapper {
         Mapping(source = "members", target = "debts", qualifiedByName = ["roomToDebts"])
     )
     fun roomToRoomDetailsResponse(room: Room): RoomDetailsResponse
+
+    @Mappings(
+        Mapping(source = "addPaymentRequest.included", target = "includedMemberIds"),
+        Mapping(target = "active", expression = "java(true)")
+    )
+    fun addPaymentRequestToPayment(addPaymentRequest: AddPaymentRequest, id: String, convertedValue: Double): Payment
 
     @Named("roomToPayments")
     @JvmDefault
