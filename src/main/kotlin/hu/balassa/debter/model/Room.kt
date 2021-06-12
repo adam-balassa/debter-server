@@ -4,6 +4,7 @@ import hu.balassa.debter.model.Currency.HUF
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey
+import kotlin.properties.Delegates
 
 
 @DynamoDbBean
@@ -12,11 +13,12 @@ class Room {
     var id: String? = null
 
     @get: DynamoDbSortKey
-    var key: String = ""
+    lateinit var key: String
 
-    var name: String = ""
+    lateinit var name: String
 
-    var currency: Currency = HUF
+    lateinit var members: List<Member>
 
-    var rounding: Double = 10.0
+    lateinit var currency: Currency
+    var rounding by Delegates.notNull<Double>()
 }

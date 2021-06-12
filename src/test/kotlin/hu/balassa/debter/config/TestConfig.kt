@@ -1,5 +1,6 @@
 package hu.balassa.debter.config
 
+import hu.balassa.debter.repository.DebterRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
@@ -18,6 +19,8 @@ open class TestConfig {
     private lateinit var dynamoDb: DynamoDbClient
     @MockBean
     private lateinit var dynamoDbClient: DynamoDbEnhancedClient
+    @MockBean
+    private lateinit var repository: DebterRepository
 
     @Bean
     open fun webTestClient(): WebTestClient =
