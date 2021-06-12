@@ -16,7 +16,7 @@ data class AddPaymentRequest (
 
     @NotNull
     @field: Past
-    val date: ZonedDateTime,
+    var date: ZonedDateTime?,
 
     @field: NotNull
     val currency: Currency,

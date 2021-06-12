@@ -5,6 +5,7 @@ import hu.balassa.debter.dto.request.CreateRoomRequest
 import hu.balassa.debter.service.RoomService
 import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.NO_CONTENT
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -16,6 +17,7 @@ import javax.validation.Valid
 
 @RestController
 @RequestMapping("/room")
+@CrossOrigin("*")
 class RoomController(
     private val service: RoomService
 ) {

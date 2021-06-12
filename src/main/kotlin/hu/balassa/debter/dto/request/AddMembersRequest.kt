@@ -6,5 +6,5 @@ import javax.validation.constraints.Size
 data class AddMembersRequest (
     @field: Size(min = 3)
     @field: NotEmpty
-    val memberNames: Set<String>
+    val members: Set<String>
 )

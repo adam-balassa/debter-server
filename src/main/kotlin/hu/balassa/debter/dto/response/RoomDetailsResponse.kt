@@ -7,7 +7,11 @@ import java.time.ZonedDateTime
 data class RoomDetailsResponse (
     val payments: List<PaymentResponse>,
     val members: List<MemberResponse>,
-    val debts: List<DebtResponse>
+    val debts: List<DebtResponse>,
+    val roomKey: String,
+    val name: String,
+    val defaultCurrency: Currency,
+    val rounding: Double
 )
 
 data class MemberResponse (

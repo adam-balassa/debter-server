@@ -9,6 +9,7 @@ import hu.balassa.debter.repository.DebterRepository
 import hu.balassa.debter.util.generateUUID
 import hu.balassa.debter.util.useRoom
 import org.springframework.stereotype.Service
+import java.time.ZonedDateTime
 
 @Service
 class PaymentService(
@@ -24,6 +25,7 @@ class PaymentService(
 
         val id = generateUUID()
         val convertedValue = exchangeClient.convert(request.currency, room.currency, request.value)
+        request.date = request.date ?: ZonedDateTime.now()
         val payment = mapper.addPaymentRequestToPayment(request, id, convertedValue)
         payer.payments = mutableListOf<Payment>().apply { addAll(payer.payments); add(payment) }
 

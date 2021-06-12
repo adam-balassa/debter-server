@@ -9,11 +9,8 @@ import kotlin.properties.Delegates
 
 @DynamoDbBean
 class Room {
-    @get:DynamoDbPartitionKey
-    var id: String? = null
-
-    @get: DynamoDbSortKey
-    lateinit var key: String
+    @get: DynamoDbPartitionKey
+    var key: String? = null
 
     lateinit var name: String
 

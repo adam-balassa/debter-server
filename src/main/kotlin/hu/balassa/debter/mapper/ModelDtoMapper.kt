@@ -17,15 +17,14 @@ import org.mapstruct.Named
 
 @Mapper(componentModel = "spring", )
 interface ModelDtoMapper {
-    @Mappings(
-        Mapping(source = "key", target = "roomKey"),
-        Mapping(source = "currency", target = "defaultCurrency")
-    )
+    @Mapping(source = "currency", target = "defaultCurrency")
     fun roomToCreateRoomResponse(room: Room): CreateRoomResponse
 
     @Mappings(
         Mapping(source = "members", target = "payments", qualifiedByName = ["roomToPayments"]),
-        Mapping(source = "members", target = "debts", qualifiedByName = ["roomToDebts"])
+        Mapping(source = "members", target = "debts", qualifiedByName = ["roomToDebts"]),
+        Mapping(source = "key", target = "roomKey"),
+        Mapping(source = "currency", target = "defaultCurrency")
     )
     fun roomToRoomDetailsResponse(room: Room): RoomDetailsResponse
 

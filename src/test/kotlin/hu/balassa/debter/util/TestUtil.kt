@@ -13,13 +13,11 @@ import kotlin.math.min
 
 fun testRoom(
     key: String,
-    id: String? = null,
     name: String = "Test room",
     currency: Currency = Currency.HUF,
     rounding: Double = 10.0,
     members: List<Member> = listOf(testMember("test member 1", "member1"), testMember("test member 2", "member2"))
 ) = Room().also {
-    it.id = id
     it.key = key
     it.name = name
     it.currency = currency
