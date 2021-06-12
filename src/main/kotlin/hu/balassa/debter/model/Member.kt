@@ -1,10 +1,11 @@
 package hu.balassa.debter.model
 
-import kotlin.properties.Delegates
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean
 
+@DynamoDbBean
 class Member {
     lateinit var id: String
     lateinit var name: String
-    var sum by Delegates.notNull<Double>()
-    var debt by Delegates.notNull<Double>()
+    lateinit var payments: List<Payment>
+    lateinit var debts: Set<DebtArrangement>
 }

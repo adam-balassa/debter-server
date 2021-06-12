@@ -1,9 +1,9 @@
 package hu.balassa.debter.model
 
-import hu.balassa.debter.model.Currency.HUF
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey
+import java.time.ZonedDateTime
 import kotlin.properties.Delegates
 
 
@@ -20,5 +20,8 @@ class Room {
     lateinit var members: List<Member>
 
     lateinit var currency: Currency
+
     var rounding by Delegates.notNull<Double>()
+
+    lateinit var lastModified: ZonedDateTime
 }

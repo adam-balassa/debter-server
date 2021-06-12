@@ -2,13 +2,21 @@ package hu.balassa.debter.integration
 
 import hu.balassa.debter.config.TestConfig
 import hu.balassa.debter.dto.response.CreateRoomResponse
+import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.exception.ErrorResponse
+import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
+import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.responseBody
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.byLessThan
+import org.assertj.core.api.Assertions.within
+import org.assertj.core.data.Offset
+import org.assertj.core.data.Offset.offset
+import org.assertj.core.data.TemporalOffset
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
@@ -19,6 +27,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFIN
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Import
 import org.springframework.test.web.reactive.server.WebTestClient
+import java.time.temporal.ChronoUnit
+import java.time.temporal.ChronoUnit.DAYS
 
 @Import(TestConfig::class)
 @SpringBootTest( webEnvironment = DEFINED_PORT )
@@ -83,8 +93,8 @@ class RoomIT {
                 .containsExactly("test member 1", "test member 2", "test member 3")
             assertThat(firstValue.members).allSatisfy {
                 assertThat(it.id).isNotNull
-                assertThat(it.debt).isEqualTo(0.0)
-                assertThat(it.sum).isEqualTo(0.0)
+                assertThat(it.payments).isEmpty()
+                assertThat(it.debts).isEmpty()
             }
         }
     }
@@ -116,4 +126,40 @@ class RoomIT {
         assertThat(response.reason).contains("memberNames")
     }
 
+    @Test
+    fun getRoom() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        val response = web.get().uri("room/$ROOM_KEY")
+            .exchange()
+            .expectStatus().isOk
+            .responseBody<RoomDetailsResponse>()
+
+        assertThat(response).isNotNull
+
+        assertThat(response.members).extracting<String> { it.id }.containsExactly("member1", "member2")
+        assertThat(response.members).extracting<String> { it.name }.containsExactly("test member 1", "test member 2")
+
+        assertThat(response.payments).allSatisfy {
+            assertThat(it.active).isTrue
+            assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, DAYS))
+            assertThat(it.currency).isEqualTo(Currency.HUF)
+            assertThat(it.included).hasSize(2)
+            assertThat(it.note).isEqualTo("test note")
+            assertThat(it.realValue).isCloseTo(20.0, offset(.0001))
+            assertThat(it.value).isCloseTo(20.0, offset(.0001))
+        }
+        assertThat(response.payments).extracting<String> { it.id }
+            .containsExactlyInAnyOrder("member1payment1", "member1payment2", "member2payment1", "member2payment2")
+        assertThat(response.payments).extracting<String> { it.memberId }
+            .containsExactlyInAnyOrder("member1", "member1", "member2", "member2")
+
+        assertThat(response.debts).allSatisfy {
+            assertThat(it.currency).isEqualTo(Currency.HUF)
+            assertThat(it.value).isCloseTo(20.0, offset(.0001))
+            assertThat(it.arranged).isFalse
+        }
+        assertThat(response.debts).extracting<Pair<String, String>> { it.from to it.to  }
+            .containsExactlyInAnyOrder("member1" to "member2", "member2" to "member1")
+    }
 }
