@@ -7,5 +7,5 @@ class Member {
     lateinit var id: String
     lateinit var name: String
     lateinit var payments: List<Payment>
-    lateinit var debts: Set<DebtArrangement>
+    lateinit var debts: List<DebtArrangement>
 }

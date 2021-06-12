@@ -20,7 +20,7 @@ import java.net.URI
 
 abstract class DynamoDbConfig {
     companion object {
-        const val tableName = "recipe"
+        const val tableName = "debter"
     }
 
     abstract fun dynamoDbClient(): DynamoDbClient
@@ -62,10 +62,10 @@ open class DynamoDbStaticConfig: DynamoDbConfig() {
     @Value("\${amazon.dynamodb.tableName}")
     private lateinit var tableName: String
 
-    @Value("\${amazon.aws.accesskey}")
+    @Value("\${amazon.aws.accessKey}")
     private lateinit var awsAccessKey: String
 
-    @Value("\${amazon.aws.secretkey}")
+    @Value("\${amazon.aws.secretKey}")
     private lateinit var awsSecretKey: String
 
     @Bean
@@ -88,7 +88,13 @@ open class DynamoDbStaticConfig: DynamoDbConfig() {
 
 @Configuration
 @Profile("production")
-open class DynamoDbRoleConfig: DynamoDbConfig() {
+open class DynamoDbProductionConfig: DynamoDbConfig() {
+    @Value("\${amazon.aws.accessKey}")
+    private lateinit var awsAccessKey: String
+
+    @Value("\${amazon.aws.secretKey}")
+    private lateinit var awsSecretKey: String
+
     @Bean
     override fun dynamoDB(): DynamoDbEnhancedClient {
         return super.dynamoDB()
@@ -98,5 +104,10 @@ open class DynamoDbRoleConfig: DynamoDbConfig() {
     override fun dynamoDbClient(): DynamoDbClient = DynamoDbClient
         .builder()
         .region(EU_CENTRAL_1)
+        .credentialsProvider { awsCredentials() }
         .build()
+
+    private fun awsCredentials(): AwsCredentials {
+        return AwsBasicCredentials.create(awsAccessKey, awsSecretKey)
+    }
 }

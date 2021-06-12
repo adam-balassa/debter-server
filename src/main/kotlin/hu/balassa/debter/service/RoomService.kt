@@ -50,6 +50,6 @@ class RoomService(
     private fun defaultMember() = Member().apply {
         id = generateUUID()
         payments = emptyList()
-        debts = emptySet()
+        debts = emptyList()
     }
 }

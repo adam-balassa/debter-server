@@ -5,8 +5,6 @@ spring:
     name: Debter Server
 info:
   version: '@version@'
-aws:
-  accessKey: AKIAWPNGN6GGIFLGT37U
 
 ---
 spring:
@@ -19,3 +17,8 @@ amazon:
   aws:
     accesskey: key
     secretkey: key2
+
+---
+spring:
+  profiles:
+    active: production

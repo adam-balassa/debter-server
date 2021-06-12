@@ -31,7 +31,7 @@ fun testMember(
     name: String = "test member 0",
     id: String = "member0",
     payments: List<Payment> = listOf(testPayment("${id}payment1"), testPayment("${id}payment2")),
-    debts: Set<DebtArrangement> = setOf(testDebt(payeeId = if (id == "member1") "member2" else "member1"))
+    debts: List<DebtArrangement> = listOf(testDebt(payeeId = if (id == "member1") "member2" else "member1"))
 ) = Member().also {
     it.id = id
     it.name = name
