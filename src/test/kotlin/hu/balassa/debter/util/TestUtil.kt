@@ -16,18 +16,19 @@ fun testRoom(
     id: String? = null,
     name: String = "Test room",
     currency: Currency = Currency.HUF,
-    rounding: Double = 10.0
+    rounding: Double = 10.0,
+    members: List<Member> = listOf(testMember("test member 1", "member1"), testMember("test member 2", "member2"))
 ) = Room().also {
     it.id = id
     it.key = key
     it.name = name
     it.currency = currency
     it.rounding = rounding
-    it.members = listOf(testMember("test member 1", "member1"), testMember("test member 2", "member2"))
+    it.members = members
 }
 
 fun testMember(
-    name: String,
+    name: String = "test member 0",
     id: String = "member0",
     payments: List<Payment> = listOf(testPayment("${id}payment1"), testPayment("${id}payment2")),
     debts: Set<DebtArrangement> = setOf(testDebt(payeeId = if (id == "member1") "member2" else "member1"))

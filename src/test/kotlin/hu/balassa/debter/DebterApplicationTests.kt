@@ -1,13 +1,13 @@
 package hu.balassa.debter
 
-import hu.balassa.debter.config.TestConfig
+import hu.balassa.debter.integration.BaseIT
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.context.annotation.Import
 
-@SpringBootTest( webEnvironment = DEFINED_PORT)
-@Import(TestConfig::class)
+@SpringBootTest( webEnvironment = RANDOM_PORT)
+@Import(BaseIT::class)
 class DebterApplicationTests {
 
     @Test

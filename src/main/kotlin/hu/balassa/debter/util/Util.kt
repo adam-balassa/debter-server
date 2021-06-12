@@ -2,6 +2,8 @@ package hu.balassa.debter.util
 
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -31,3 +33,5 @@ fun <T> DebterRepository.useRoom(roomKey: String, body: (_: Room) -> T): T = loa
 fun <T> DebterRepository.loadRoom(roomKey: String, body: (_: Room) -> T): T = findByKey(roomKey)?.let {
     body(it)
 } ?: throw IllegalArgumentException("Invalid room key: $roomKey")
+
+inline fun <reified T : Any> logger(): Logger = LoggerFactory.getLogger(T::class.java)

@@ -1,11 +1,9 @@
 package hu.balassa.debter.integration
 
-import hu.balassa.debter.config.TestConfig
 import hu.balassa.debter.dto.response.CreateRoomResponse
 import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.exception.ErrorResponse
 import hu.balassa.debter.model.Currency
-import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
 import hu.balassa.debter.util.dateOf
@@ -13,35 +11,22 @@ import hu.balassa.debter.util.responseBody
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
-import org.assertj.core.api.Assertions.within
-import org.assertj.core.data.Offset
 import org.assertj.core.data.Offset.offset
-import org.assertj.core.data.TemporalOffset
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.context.annotation.Import
 import org.springframework.test.web.reactive.server.WebTestClient
-import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.DAYS
 
-@Import(TestConfig::class)
-@SpringBootTest( webEnvironment = DEFINED_PORT )
-class RoomIT {
+class RoomIT: BaseIT() {
     companion object {
         private const val ROOM_KEY = "ROOMID"
     }
-
-    @Autowired
-    private lateinit var repository: DebterRepository
-
-    @Autowired
-    private lateinit var web: WebTestClient
 
     @Test
     fun createRoom() {
