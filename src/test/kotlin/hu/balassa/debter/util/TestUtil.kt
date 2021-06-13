@@ -1,15 +1,23 @@
 package hu.balassa.debter.util
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.DebtArrangement
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Payment
 import hu.balassa.debter.model.Room
+import org.springframework.core.io.ClassPathResource
 import org.springframework.test.web.reactive.server.WebTestClient
-import java.time.LocalDateTime
+import java.io.File
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.Files
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import kotlin.math.min
 
 fun testRoom(
     key: String,
@@ -77,3 +85,12 @@ fun dateOf(
 
 inline fun <reified T> WebTestClient.ResponseSpec.responseBody() =
     expectBody(T::class.java).returnResult().responseBody!!
+
+inline fun <reified T> loadJsonFile(fileName: String) =
+    jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .readValue(getFile(fileName), T::class.java)
+
+fun loadJsonFile(fileName: String): String = getFile(fileName)!!.readLines(UTF_8).joinToString("")
+
+
+fun getFile(fileName: String): File? = ClassPathResource("TEST_MOCK/$fileName").file

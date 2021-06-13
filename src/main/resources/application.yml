@@ -5,6 +5,9 @@ spring:
     name: Debter Server
 info:
   version: '@version@'
+fixer:
+  host: http://data.fixer.io
+  api-key: 5b84246bf4897159cfa64baa7eab657d
 
 ---
 spring:

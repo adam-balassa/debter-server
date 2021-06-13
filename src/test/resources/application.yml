@@ -1,0 +1,3 @@
+fixer:
+  host: http://localhost:8088
+  api-key: testapikey

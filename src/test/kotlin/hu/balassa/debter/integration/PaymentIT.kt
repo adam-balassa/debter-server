@@ -12,6 +12,7 @@ import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
+import org.assertj.core.data.Offset
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -80,6 +81,38 @@ class PaymentIT: BaseIT() {
             assertThat(firstValue.key).isEqualTo(ROOM_KEY)
         }
     }
+
+    @Test
+    fun addPaymentWithForeignCurrency() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        val response = web.post().uri("room/$ROOM_KEY/payment")
+            .bodyValue(object {
+                val value = 10.0
+                val memberId = "member1"
+                val currency = "EUR"
+                val note = "test note"
+                val date = "2020-09-12T12:30:00+02:00"
+                val included = listOf("member1", "member2")
+            })
+            .exchange()
+            .expectStatus().isCreated
+            .responseBody<RoomDetailsResponse>()
+
+        assertThat(response.payments).anySatisfy {
+            assertThat(it.value).isEqualTo(10.0)
+            assertThat(it.realValue).isCloseTo(3481.8, Offset.offset(0.1))
+        }
+        argumentCaptor<Room> {
+            verify(repository).save(capture())
+            assertThat(firstValue.key).isEqualTo(ROOM_KEY)
+            assertThat(firstValue.members.find { it.id == "member1" }!!.payments).hasSize(3).anySatisfy {
+                assertThat(it.value).isEqualTo(10.0)
+                assertThat(it.convertedValue).isCloseTo(3481.8, Offset.offset(0.1))
+            }
+        }
+    }
+
 
     @Test
     fun deletePayment() {

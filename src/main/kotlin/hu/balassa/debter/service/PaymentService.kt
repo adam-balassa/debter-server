@@ -1,6 +1,6 @@
 package hu.balassa.debter.service
 
-import hu.balassa.debter.client.CurrencyConverterClient
+import hu.balassa.debter.client.ExchangeClient
 import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.mapper.ModelDtoMapper
@@ -15,7 +15,7 @@ import java.time.ZonedDateTime
 class PaymentService(
     private val repository: DebterRepository,
     private val mapper: ModelDtoMapper,
-    private val exchangeClient: CurrencyConverterClient,
+    private val exchangeClient: ExchangeClient,
     private val debtArrangementService: DebtArrangementService
 ) {
     fun addPayment(request: AddPaymentRequest, roomKey: String): RoomDetailsResponse = repository.useRoom(roomKey) { room ->
