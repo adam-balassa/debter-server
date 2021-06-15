@@ -8,4 +8,7 @@ class Member {
     lateinit var name: String
     lateinit var payments: List<Payment>
     lateinit var debts: List<DebtArrangement>
+    override fun toString(): String {
+        return "Member(id='$id', name='$name', payments=$payments, debts=$debts)"
+    }
 }

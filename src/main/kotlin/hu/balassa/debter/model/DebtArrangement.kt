@@ -9,4 +9,7 @@ class DebtArrangement {
     var value by Delegates.notNull<Double>()
     lateinit var currency: Currency
     var arranged by Delegates.notNull<Boolean>()
+    override fun toString(): String {
+        return "DebtArrangement(payeeId='$payeeId', value=$value, currency=$currency, arranged=$arranged)"
+    }
 }

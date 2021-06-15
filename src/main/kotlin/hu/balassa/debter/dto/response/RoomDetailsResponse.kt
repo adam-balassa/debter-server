@@ -16,7 +16,9 @@ data class RoomDetailsResponse (
 
 data class MemberResponse (
     val id: String,
-    val name: String
+    val name: String,
+    val sum: Double,
+    val debt: Double
 )
 
 data class DebtResponse (

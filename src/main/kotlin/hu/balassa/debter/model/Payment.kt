@@ -14,4 +14,7 @@ class Payment {
     lateinit var date: ZonedDateTime
     var active by Delegates.notNull<Boolean>()
     lateinit var includedMemberIds: List<String>
+    override fun toString(): String {
+        return "Payment(id='$id', value=$value, currency=$currency, convertedValue=$convertedValue, note='$note', date=$date, active=$active, includedMemberIds=$includedMemberIds)"
+    }
 }

@@ -1,8 +1,6 @@
 package hu.balassa.debter.util
 
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.DebtArrangement
@@ -12,15 +10,12 @@ import hu.balassa.debter.model.Room
 import org.springframework.core.io.ClassPathResource
 import org.springframework.test.web.reactive.server.WebTestClient
 import java.io.File
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.Files
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 fun testRoom(
-    key: String,
+    key: String = "TESTKEY",
     name: String = "Test room",
     currency: Currency = Currency.HUF,
     rounding: Double = 10.0,

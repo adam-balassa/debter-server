@@ -3,6 +3,7 @@ package hu.balassa.debter.mapper
 import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.dto.response.CreateRoomResponse
 import hu.balassa.debter.dto.response.DebtResponse
+import hu.balassa.debter.dto.response.MemberResponse
 import hu.balassa.debter.dto.response.PaymentResponse
 import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.model.DebtArrangement
@@ -21,8 +22,9 @@ interface ModelDtoMapper {
     fun roomToCreateRoomResponse(room: Room): CreateRoomResponse
 
     @Mappings(
-        Mapping(source = "members", target = "payments", qualifiedByName = ["roomToPayments"]),
-        Mapping(source = "members", target = "debts", qualifiedByName = ["roomToDebts"]),
+        Mapping(source = "members", target = "payments", qualifiedByName = ["membersToPayments"]),
+        Mapping(source = "members", target = "debts", qualifiedByName = ["membersToDebts"]),
+        Mapping(source = "members", target = "members", qualifiedByName = ["membersToMembers"]),
         Mapping(source = "key", target = "roomKey"),
         Mapping(source = "currency", target = "defaultCurrency")
     )
@@ -34,13 +36,25 @@ interface ModelDtoMapper {
     )
     fun addPaymentRequestToPayment(addPaymentRequest: AddPaymentRequest, id: String, convertedValue: Double): Payment
 
-    @Named("roomToPayments")
+    @Named("membersToPayments")
     @JvmDefault
     fun membersToPaymentResponse(members: List<Member>): List<PaymentResponse> =
         members.flatMap { it.payments.map { payment -> it.id to payment } }
             .map { paymentToPaymentResponse(it.second, it.first) }
 
-    @Named("roomToDebts")
+    @Named("membersToMembers")
+    @JvmDefault
+    fun membersToMemberResponse(members: List<Member>): List<MemberResponse> {
+        val roomSum = members.flatMap { it.payments }.filter { it.active }.sumOf { it.convertedValue }
+        return members.map { member ->
+            val sum = member.payments.sumOf { it.convertedValue * if (it.active) 1 else 0 }
+            val debt = roomSum / members.size - sum
+            memberToMemberResponse(member, sum, debt)
+        }
+    }
+
+
+    @Named("membersToDebts")
     @JvmDefault
     fun membersToDebtResponse(members: List<Member>): List<DebtResponse> =
         members.flatMap { it.debts.map { debt -> it.id to debt } }
@@ -56,4 +70,6 @@ interface ModelDtoMapper {
         Mapping(source = "debt.payeeId", target = "to")
     )
     fun debtArrangementToDebtResponse(debt: DebtArrangement, from: String): DebtResponse
+
+    fun memberToMemberResponse(member: Member, sum: Double, debt: Double): MemberResponse
 }

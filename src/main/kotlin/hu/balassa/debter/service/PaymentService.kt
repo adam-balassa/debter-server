@@ -16,7 +16,7 @@ class PaymentService(
     private val repository: DebterRepository,
     private val mapper: ModelDtoMapper,
     private val exchangeClient: ExchangeClient,
-    private val debtArrangementService: DebtArrangementService
+    private val debtService: DebtService
 ) {
     fun addPayment(request: AddPaymentRequest, roomKey: String): RoomDetailsResponse = repository.useRoom(roomKey) { room ->
         val payer = room.members.find { it.id == request.memberId }
@@ -29,7 +29,7 @@ class PaymentService(
         val payment = mapper.addPaymentRequestToPayment(request, id, convertedValue)
         payer.payments = mutableListOf<Payment>().apply { addAll(payer.payments); add(payment) }
 
-        debtArrangementService.arrangeDebts(room)
+        debtService.arrangeDebts(room)
 
         mapper.roomToRoomDetailsResponse(room)
     }
@@ -38,7 +38,7 @@ class PaymentService(
         val payment = room.members.flatMap { it.payments }.find { it.id == paymentId }
             ?: throw IllegalArgumentException("Invalid payment id $paymentId")
         payment.active = false
-        debtArrangementService.arrangeDebts(room)
+        debtService.arrangeDebts(room)
         mapper.roomToRoomDetailsResponse(room)
     }
 
@@ -46,7 +46,7 @@ class PaymentService(
         val payment = room.members.flatMap { it.payments }.find { it.id == paymentId }
             ?: throw IllegalArgumentException("Invalid payment id $paymentId")
         payment.active = true
-        debtArrangementService.arrangeDebts(room)
+        debtService.arrangeDebts(room)
         mapper.roomToRoomDetailsResponse(room)
     }
 }
