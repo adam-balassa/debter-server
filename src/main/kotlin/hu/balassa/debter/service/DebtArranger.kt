@@ -69,6 +69,4 @@ class DebtArranger (
         membersWithClaims.sortByDescending { it.debt }
         membersWithDebts.sortByDescending { it.debt }
     }
-
-    private fun Double.isAround(other: Double, rounding: Double) = (this - other).absoluteValue < rounding / 2
 }

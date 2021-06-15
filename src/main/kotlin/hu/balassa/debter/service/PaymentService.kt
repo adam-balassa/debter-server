@@ -29,7 +29,7 @@ class PaymentService(
         val payment = mapper.addPaymentRequestToPayment(request, id, convertedValue)
         payer.payments = mutableListOf<Payment>().apply { addAll(payer.payments); add(payment) }
 
-        debtService.arrangeDebts(room)
+        debtService.arrangeDebtForPayment(request, room)
 
         mapper.roomToRoomDetailsResponse(room)
     }

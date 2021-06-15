@@ -1,15 +1,34 @@
 package hu.balassa.debter.service
 
+import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.model.DebtArrangement
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Payment
 import hu.balassa.debter.model.Room
 import org.springframework.stereotype.Service
+import kotlin.math.absoluteValue
 
 @Service
 open class DebtService {
 
-    open fun arrangeDebts(room: Room) {
+    fun arrangeDebtForPayment(newPayment: AddPaymentRequest, room: Room) {
+        if (checkForExistingDebtArrangement(newPayment, room))
+            return
+        arrangeDebts(room)
+    }
+
+    private fun checkForExistingDebtArrangement(newPayment: AddPaymentRequest, room: Room): Boolean {
+        val member = room.members.find { it.id == newPayment.memberId }!!
+        val suitableDebt = member.debts.find { it.value.isAround(newPayment.value, room.rounding) &&
+                !it.arranged &&
+                it.currency == newPayment.currency &&
+                listOf(it.payeeId) == newPayment.included
+        } ?: return false
+        suitableDebt.arranged = true
+        return true
+    }
+
+    fun arrangeDebts(room: Room) {
         val memberDebts = getMemberDebts(room.members)
 
         val (claims, debts) = memberDebts.partition { it.debt < 0.0 }
@@ -34,7 +53,6 @@ open class DebtService {
             }
         }
     }
-
 
     private fun getMemberDebts(members: List<Member>): List<SimpleMember> {
         val simplePayments = paymentsToSimplePayment(members)
@@ -72,3 +90,4 @@ open class DebtService {
 data class SimplePayment(val memberId: String, val value: Double)
 data class SimpleMember(val memberId: String, var debt: Double)
 data class SimpleDebtArrangement (val fromId: String, val toId: String, val amount: Double)
+fun Double.isAround(other: Double, rounding: Double) = (this - other).absoluteValue < rounding / 2

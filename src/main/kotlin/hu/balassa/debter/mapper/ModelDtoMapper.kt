@@ -45,10 +45,9 @@ interface ModelDtoMapper {
     @Named("membersToMembers")
     @JvmDefault
     fun membersToMemberResponse(members: List<Member>): List<MemberResponse> {
-        val roomSum = members.flatMap { it.payments }.filter { it.active }.sumOf { it.convertedValue }
         return members.map { member ->
             val sum = member.payments.sumOf { it.convertedValue * if (it.active) 1 else 0 }
-            val debt = roomSum / members.size - sum
+            val debt = member.debts.sumByDouble { it.value }
             memberToMemberResponse(member, sum, debt)
         }
     }

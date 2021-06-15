@@ -2,11 +2,12 @@ package hu.balassa.debter.integration
 
 import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.model.Currency.HUF
+import hu.balassa.debter.model.DebtArrangement
 import hu.balassa.debter.model.Room
-import hu.balassa.debter.repository.DebterRepository
-import hu.balassa.debter.service.DebtArrangementService
+import hu.balassa.debter.service.DebtService
 import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.responseBody
+import hu.balassa.debter.util.testDebt
 import hu.balassa.debter.util.testMember
 import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
@@ -18,12 +19,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.context.annotation.Import
-import org.springframework.test.web.reactive.server.WebTestClient
 import java.time.temporal.ChronoUnit.MINUTES
 
 class PaymentIT: BaseIT() {
@@ -31,9 +27,6 @@ class PaymentIT: BaseIT() {
         private const val ROOM_KEY = "ROOMID"
         private const val PAYMENT_ID = "member1payment1"
     }
-
-    @MockBean
-    private lateinit var debtArrangementService: DebtArrangementService
 
     @Test
     fun addPayment() {
@@ -63,6 +56,8 @@ class PaymentIT: BaseIT() {
             assertThat(it.active).isTrue
         }
 
+        assertThat(response.debts.sumByDouble { it.value }).isEqualTo(response.members.sumByDouble { it.debt })
+
         argumentCaptor<Room> {
             verify(repository).save(capture())
             assertThat(firstValue.key).isEqualTo(ROOM_KEY)
@@ -75,10 +70,6 @@ class PaymentIT: BaseIT() {
                 assertThat(it.note).isEqualTo("test note")
                 assertThat(it.active).isTrue
             }
-        }
-        argumentCaptor<Room> {
-            verify(debtArrangementService).arrangeDebts(capture())
-            assertThat(firstValue.key).isEqualTo(ROOM_KEY)
         }
     }
 
@@ -113,6 +104,29 @@ class PaymentIT: BaseIT() {
         }
     }
 
+    @Test
+    fun addPaymentResolveDebt() {
+        val room = testRoom(rounding = 10.0, members = listOf(
+            testMember(id = "member1", debts = listOf(testDebt(value = 100.0, payeeId = "member2"))),
+            testMember(id = "member2", debts = emptyList())))
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(room)
+
+        val response = web.post().uri("room/$ROOM_KEY/payment")
+            .bodyValue(object {
+                val value = 97.0
+                val memberId = "member1"
+                val currency = "HUF"
+                val note = "test note"
+                val date = "2020-09-12T12:30:00+02:00"
+                val included = listOf("member2")
+            })
+            .exchange()
+            .expectStatus().isCreated
+            .responseBody<RoomDetailsResponse>()
+
+        assertThat(response.debts).hasSize(1).allMatch { it.arranged }
+    }
+
 
     @Test
     fun deletePayment() {
@@ -135,8 +149,6 @@ class PaymentIT: BaseIT() {
                 assertThat(it.active).isFalse
             }
         }
-
-        verify(debtArrangementService).arrangeDebts(any())
     }
 
     @Test
@@ -162,6 +174,5 @@ class PaymentIT: BaseIT() {
                 assertThat(it.active).isTrue
             }
         }
-        verify(debtArrangementService).arrangeDebts(any())
     }
 }
