@@ -40,6 +40,7 @@ open class DebtService {
 
     private fun setMemberDebts(room: Room, arrangements: List<SimpleDebtArrangement>) {
         val debts = arrangements.groupBy { it.fromId }
+        room.members.forEach { it.debts = emptyList() }
         room.members.forEach { member ->
             debts[member.id]?.let { memberDebts ->
                 member.debts = memberDebts.map {

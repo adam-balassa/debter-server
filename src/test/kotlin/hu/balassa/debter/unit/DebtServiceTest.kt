@@ -2,6 +2,7 @@ package hu.balassa.debter.unit
 
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.service.DebtService
+import hu.balassa.debter.util.testDebt
 import hu.balassa.debter.util.testMember
 import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
@@ -66,6 +67,23 @@ class DebtServiceTest {
                 assertThat(it.currency).isEqualTo(HUF)
                 assertThat(it.arranged).isFalse
             }
+        }
+    }
+
+    @Test
+    fun testArrangementExistingDebts() {
+        val room = testRoom(rounding = 10.0, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(
+                convertedValue = 100.0,
+                includedMemberIds = listOf("1", "2"))),
+                debts = listOf(testDebt())),
+            testMember(id = "2", payments = listOf(), debts = emptyList())))
+
+        service.arrangeDebts(room)
+
+        assertThat(room.members).anySatisfy {
+            assertThat(it.id).isEqualTo("1")
+            assertThat(it.debts).isEmpty()
         }
     }
 }
