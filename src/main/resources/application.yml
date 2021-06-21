@@ -8,6 +8,9 @@ info:
 fixer:
   host: http://data.fixer.io
   api-key: 5b84246bf4897159cfa64baa7eab657d
+management.endpoints.web.cors:
+  allowed-origins: https://debter.netlify.app/
+  allowed-methods: GET
 
 ---
 spring:
