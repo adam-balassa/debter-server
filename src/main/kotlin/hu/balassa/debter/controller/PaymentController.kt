@@ -5,6 +5,7 @@ import hu.balassa.debter.service.PaymentService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,11 +16,14 @@ import org.springframework.web.bind.annotation.RestController
 import javax.validation.Valid
 
 @RestController
-@RequestMapping("/room/{roomKey}/payment")
+@RequestMapping("/room/{roomKey}/payments")
 @CrossOrigin("*")
 class PaymentController (
     private val service: PaymentService
 ) {
+    @GetMapping
+    fun getPayments(@PathVariable roomKey: String) = service.getPayments(roomKey)
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun addPayment(
@@ -29,6 +33,7 @@ class PaymentController (
 
 
     @PatchMapping("/{paymentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun revivePayment(
         @PathVariable roomKey: String,
         @PathVariable paymentId: String
@@ -36,6 +41,7 @@ class PaymentController (
 
 
     @DeleteMapping("/{paymentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePayment(
         @PathVariable roomKey: String,
         @PathVariable paymentId: String

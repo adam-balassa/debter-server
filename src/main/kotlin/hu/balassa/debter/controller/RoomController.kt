@@ -26,6 +26,10 @@ class RoomController(
     fun getRoomDetails(@PathVariable roomKey: String) =
         service.getRoomDetails(roomKey)
 
+    @GetMapping("/{roomKey}/summary")
+    fun getRoomSummary(@PathVariable roomKey: String) =
+        service.getRoomSummary(roomKey)
+
     @PostMapping
     @ResponseStatus(CREATED)
     fun createRoom(@RequestBody @Valid request: CreateRoomRequest) =
@@ -35,4 +39,8 @@ class RoomController(
     @ResponseStatus(NO_CONTENT)
     fun addMembers(@RequestBody @Valid request: AddMembersRequest, @PathVariable roomKey: String) =
         service.addMembers(request, roomKey)
+
+    @GetMapping("/{roomKey}/members")
+    fun getMembers(@PathVariable roomKey: String) =
+        service.getMembers(roomKey)
 }

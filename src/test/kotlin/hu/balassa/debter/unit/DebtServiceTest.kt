@@ -8,9 +8,10 @@ import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 
 class DebtServiceTest {
-    private val service = DebtService()
+    private val service = DebtService(mock {  })
 
     @Test
     fun testArrangementTwoMembers() {

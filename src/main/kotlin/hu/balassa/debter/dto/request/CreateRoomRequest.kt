@@ -7,5 +7,5 @@ import javax.validation.constraints.NotEmpty
 data class CreateRoomRequest (
     @field: Length(min = 3)
     @field: NotEmpty
-    val roomName: String
+    val name: String
 )

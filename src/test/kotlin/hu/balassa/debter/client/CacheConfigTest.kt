@@ -9,14 +9,20 @@ import hu.balassa.debter.integration.BaseIT
 import hu.balassa.debter.model.Currency
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cache.CacheManager
 
 class CacheConfigTest: BaseIT() {
 
     @Autowired
     private lateinit var exchangeClient: ExchangeClient
 
+    @Autowired
+    private lateinit var cacheManager: CacheManager
+
     @Test
     fun loadExchangeRatesEurToHuf() {
+        cacheManager.getCache("exchangeRates")?.clear()
+
         exchangeClient.convert(Currency.EUR, Currency.HUF, 10.0)
         exchangeClient.convert(Currency.HUF, Currency.EUR, 1000.0)
         exchangeClient.convert(Currency.USD, Currency.EUR, 6.0)

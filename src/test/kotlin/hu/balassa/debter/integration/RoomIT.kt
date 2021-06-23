@@ -1,12 +1,15 @@
 package hu.balassa.debter.integration
 
 import hu.balassa.debter.dto.response.CreateRoomResponse
+import hu.balassa.debter.dto.response.MemberResponse
 import hu.balassa.debter.dto.response.RoomDetailsResponse
+import hu.balassa.debter.dto.response.RoomSummary
 import hu.balassa.debter.exception.ErrorResponse
-import hu.balassa.debter.model.Currency
+import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.responseBody
+import hu.balassa.debter.util.responseBodyList
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
@@ -30,19 +33,19 @@ class RoomIT: BaseIT() {
         whenever(repository.save(any())).then { (it.arguments[0] as Room).apply { key = ROOM_KEY} }
 
         val response = web.post().uri("room")
-            .bodyValue(object { val roomName = "Test room" })
+            .bodyValue(object { val name = "Test room" })
             .exchange()
             .expectStatus().isCreated
             .responseBody<CreateRoomResponse>()
 
         assertThat(response).isNotNull
-        assertThat(response.key).hasSize(6)
-        assertThat(response.defaultCurrency.name).isEqualTo("HUF")
+        assertThat(response.roomKey).hasSize(6)
+        assertThat(response.currency.name).isEqualTo("HUF")
         assertThat(response.rounding).isEqualTo(10.0)
 
         argumentCaptor<Room> {
             verify(repository).save(capture())
-            assertThat(firstValue.key).isEqualTo(response.key)
+            assertThat(firstValue.key).isEqualTo(response.roomKey)
             assertThat(firstValue.name).isEqualTo("Test room")
             assertThat(firstValue.lastModified).isCloseTo(ZonedDateTime.now(), byLessThan(1, MINUTES))
         }
@@ -51,13 +54,13 @@ class RoomIT: BaseIT() {
     @Test
     fun createRoomInvalidRoomName() {
         val response = web.post().uri("room")
-            .bodyValue(object { val roomName = "x" })
+            .bodyValue(object { val name = "x" })
             .exchange()
             .expectStatus().isBadRequest
             .responseBody<ErrorResponse>()
 
         assertThat(response.error).isEqualTo("Bad request")
-        assertThat(response.reason).contains("roomName")
+        assertThat(response.reason).contains("name")
     }
 
     @Test
@@ -127,7 +130,7 @@ class RoomIT: BaseIT() {
         assertThat(response.payments).allSatisfy {
             assertThat(it.active).isTrue
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, DAYS))
-            assertThat(it.currency).isEqualTo(Currency.HUF)
+            assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.included).hasSize(2)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.realValue).isCloseTo(20.0, offset(.0001))
@@ -139,11 +142,51 @@ class RoomIT: BaseIT() {
             .containsExactlyInAnyOrder("member1", "member1", "member2", "member2")
 
         assertThat(response.debts).allSatisfy {
-            assertThat(it.currency).isEqualTo(Currency.HUF)
+            assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.value).isCloseTo(20.0, offset(.0001))
             assertThat(it.arranged).isFalse
         }
         assertThat(response.debts).extracting<Pair<String, String>> { it.from to it.to  }
             .containsExactlyInAnyOrder("member1" to "member2", "member2" to "member1")
+    }
+
+    @Test
+    fun getRoomSummary() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        val response = web.get().uri("room/$ROOM_KEY/summary")
+            .exchange()
+            .expectStatus().isOk
+            .responseBody<RoomSummary>()
+
+        assertThat(response.currency).isEqualTo(HUF)
+        assertThat(response.sum).isEqualTo(80.0)
+        assertThat(response.roomKey).isEqualTo(ROOM_KEY)
+        assertThat(response.name).isEqualTo("Test room")
+        assertThat(response.memberSummary).hasSize(2)
+            .allSatisfy {
+                assertThat(it.sum).isEqualTo(40.0)
+                assertThat(it.debt).isEqualTo(20.0)
+            }
+            .extracting<String> { it.name }.containsExactly("test member 1", "test member 2")
+    }
+
+    @Test
+    fun getMembers() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        val response = web.get().uri("room/$ROOM_KEY/members")
+            .exchange()
+            .expectStatus().isOk
+            .responseBodyList<MemberResponse>()
+
+        assertThat(response).hasSize(2)
+            .anySatisfy {
+                assertThat(it.id).isEqualTo("member1")
+                assertThat(it.name).isEqualTo("test member 1")
+            }.anySatisfy {
+                assertThat(it.id).isEqualTo("member2")
+                assertThat(it.name).isEqualTo("test member 2")
+            }
     }
 }

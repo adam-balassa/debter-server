@@ -1,10 +1,9 @@
 package hu.balassa.debter.integration
 
+import hu.balassa.debter.dto.response.GetPaymentsResponse
 import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.model.Currency.HUF
-import hu.balassa.debter.model.DebtArrangement
 import hu.balassa.debter.model.Room
-import hu.balassa.debter.service.DebtService
 import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.responseBody
 import hu.balassa.debter.util.testDebt
@@ -15,11 +14,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
 import org.assertj.core.data.Offset
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.mock.mockito.MockBean
+import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.MINUTES
 
 class PaymentIT: BaseIT() {
@@ -32,7 +30,7 @@ class PaymentIT: BaseIT() {
     fun addPayment() {
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
 
-        val response = web.post().uri("room/$ROOM_KEY/payment")
+        web.post().uri("room/$ROOM_KEY/payments")
             .bodyValue(object {
                 val value = 10.0
                 val memberId = "member1"
@@ -43,20 +41,6 @@ class PaymentIT: BaseIT() {
             })
             .exchange()
             .expectStatus().isCreated
-            .responseBody<RoomDetailsResponse>()
-
-        assertThat(response.payments).anySatisfy {
-            assertThat(it.memberId).isEqualTo("member1")
-            assertThat(it.value).isEqualTo(10.0)
-            assertThat(it.realValue).isEqualTo(10.0)
-            assertThat(it.currency).isEqualTo(HUF)
-            assertThat(it.date).isCloseTo(dateOf(2020, 9, 12, 12, 30), byLessThan(1, MINUTES))
-            assertThat(it.included).containsExactly("member1", "member2")
-            assertThat(it.note).isEqualTo("test note")
-            assertThat(it.active).isTrue
-        }
-
-        assertThat(response.debts.sumByDouble { it.value }).isEqualTo(response.members.sumByDouble { it.debt })
 
         argumentCaptor<Room> {
             verify(repository).save(capture())
@@ -77,7 +61,7 @@ class PaymentIT: BaseIT() {
     fun addPaymentWithForeignCurrency() {
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
 
-        val response = web.post().uri("room/$ROOM_KEY/payment")
+        web.post().uri("room/$ROOM_KEY/payments")
             .bodyValue(object {
                 val value = 10.0
                 val memberId = "member1"
@@ -88,12 +72,7 @@ class PaymentIT: BaseIT() {
             })
             .exchange()
             .expectStatus().isCreated
-            .responseBody<RoomDetailsResponse>()
 
-        assertThat(response.payments).anySatisfy {
-            assertThat(it.value).isEqualTo(10.0)
-            assertThat(it.realValue).isCloseTo(3481.8, Offset.offset(0.1))
-        }
         argumentCaptor<Room> {
             verify(repository).save(capture())
             assertThat(firstValue.key).isEqualTo(ROOM_KEY)
@@ -111,7 +90,7 @@ class PaymentIT: BaseIT() {
             testMember(id = "member2", debts = emptyList())))
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(room)
 
-        val response = web.post().uri("room/$ROOM_KEY/payment")
+         web.post().uri("room/$ROOM_KEY/payments")
             .bodyValue(object {
                 val value = 97.0
                 val memberId = "member1"
@@ -122,9 +101,44 @@ class PaymentIT: BaseIT() {
             })
             .exchange()
             .expectStatus().isCreated
-            .responseBody<RoomDetailsResponse>()
 
-        assertThat(response.debts).hasSize(1).allMatch { it.arranged }
+        argumentCaptor<Room> {
+            verify(repository).save(capture())
+            assertThat(firstValue.members[0].debts).allMatch { it.arranged }
+        }
+    }
+
+    @Test
+    fun getPayments() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
+            testMember(id = "2", payments = listOf(testPayment(value = 400.0, includedMemberIds = listOf("1"), active = false))),
+        )))
+
+        val response = web.get().uri("room/${ROOM_KEY}/payments")
+            .exchange()
+            .expectStatus().isOk
+            .responseBody<GetPaymentsResponse>()
+
+        assertThat(response.activePayments).hasSize(1).allSatisfy {
+            assertThat(it.currency).isEqualTo(HUF)
+            assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
+            assertThat(it.includedMembers).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
+            assertThat(it.includedMembers).extracting<Boolean> { it.included }.containsExactly(true, true)
+            assertThat(it.note).isEqualTo("test note")
+            assertThat(it.value).isCloseTo(300.0, Offset.offset(.0001))
+            assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
+
+        }
+        assertThat(response.deletedPayments).hasSize(1).allSatisfy {
+            assertThat(it.currency).isEqualTo(HUF)
+            assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
+            assertThat(it.includedMembers).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
+            assertThat(it.includedMembers).extracting<Boolean> { it.included }.containsExactly(true, false)
+            assertThat(it.note).isEqualTo("test note")
+            assertThat(it.value).isCloseTo(400.0, Offset.offset(.0001))
+            assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
+        }
     }
 
 
@@ -132,15 +146,9 @@ class PaymentIT: BaseIT() {
     fun deletePayment() {
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
 
-        val response = web.delete().uri("room/$ROOM_KEY/payment/$PAYMENT_ID")
+        web.delete().uri("room/$ROOM_KEY/payments/$PAYMENT_ID")
             .exchange()
-            .expectStatus().isOk
-            .responseBody<RoomDetailsResponse>()
-
-        assertThat(response.payments).anySatisfy {
-            assertThat(it.id).isEqualTo(PAYMENT_ID)
-            assertThat(it.active).isFalse
-        }
+            .expectStatus().isNoContent
 
         argumentCaptor<Room> {
             verify(repository).save(capture())
@@ -158,15 +166,10 @@ class PaymentIT: BaseIT() {
             members = listOf(testMember(id="member1", payments = listOf(testPayment("member1payment1", active = false))))
         ))
 
-        val response = web.patch().uri("room/$ROOM_KEY/payment/$PAYMENT_ID")
+         web.patch().uri("room/$ROOM_KEY/payments/$PAYMENT_ID")
             .exchange()
-            .expectStatus().isOk
-            .responseBody<RoomDetailsResponse>()
+            .expectStatus().isNoContent
 
-        assertThat(response.payments).anySatisfy {
-            assertThat(it.id).isEqualTo(PAYMENT_ID)
-            assertThat(it.active).isTrue
-        }
         argumentCaptor<Room> {
             verify(repository).save(capture())
             assertThat(firstValue.members.find { it.id == "member1" }!!.payments).anySatisfy {

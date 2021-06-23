@@ -19,7 +19,7 @@ fun testRoom(
     name: String = "Test room",
     currency: Currency = Currency.HUF,
     rounding: Double = 10.0,
-    members: List<Member> = listOf(testMember("test member 1", "member1"), testMember("test member 2", "member2"))
+    members: List<Member> = listOf(testMember("member1", "test member 1"), testMember("member2", "test member 2"))
 ) = Room().also {
     it.key = key
     it.name = name
@@ -29,8 +29,8 @@ fun testRoom(
 }
 
 fun testMember(
-    name: String = "test member 0",
     id: String = "member0",
+    name: String = "test member $id",
     payments: List<Payment> = listOf(testPayment("${id}payment1"), testPayment("${id}payment2")),
     debts: List<DebtArrangement> = listOf(testDebt(payeeId = if (id == "member1") "member2" else "member1"))
 ) = Member().also {
@@ -80,6 +80,9 @@ fun dateOf(
 
 inline fun <reified T> WebTestClient.ResponseSpec.responseBody() =
     expectBody(T::class.java).returnResult().responseBody!!
+
+inline fun <reified T> WebTestClient.ResponseSpec.responseBodyList() =
+    expectBodyList(T::class.java).returnResult().responseBody!!
 
 inline fun <reified T> loadJsonFile(fileName: String) =
     jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)

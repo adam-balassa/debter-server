@@ -3,7 +3,8 @@ package hu.balassa.debter.dto.response
 import hu.balassa.debter.model.Currency
 
 data class CreateRoomResponse (
-    val key: String,
-    val defaultCurrency: Currency,
+    val roomKey: String,
+    val name: String,
+    val currency: Currency,
     val rounding: Double
 )
