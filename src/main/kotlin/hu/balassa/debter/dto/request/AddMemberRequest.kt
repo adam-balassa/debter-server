@@ -2,10 +2,10 @@ package hu.balassa.debter.dto.request
 
 import org.hibernate.validator.constraints.Length
 import javax.validation.constraints.NotEmpty
-import javax.validation.constraints.Size
 
-data class AddMembersRequest (
-    @field: Size(min = 3)
+data class AddMemberRequest (
     @field: NotEmpty
-    val members: Set<@NotEmpty @Length(min=3) String>
+    @field: Length(min=3)
+    val name: String,
+    val includedPaymentIds: List<String>
 )

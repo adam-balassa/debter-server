@@ -3,13 +3,18 @@ package hu.balassa.debter.integration
 import hu.balassa.debter.dto.response.CreateRoomResponse
 import hu.balassa.debter.dto.response.MemberResponse
 import hu.balassa.debter.dto.response.RoomDetailsResponse
+import hu.balassa.debter.dto.response.RoomSettings
 import hu.balassa.debter.dto.response.RoomSummary
 import hu.balassa.debter.exception.ErrorResponse
+import hu.balassa.debter.model.Currency
+import hu.balassa.debter.model.Currency.EUR
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.responseBody
 import hu.balassa.debter.util.responseBodyList
+import hu.balassa.debter.util.testMember
+import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
@@ -71,6 +76,7 @@ class RoomIT: BaseIT() {
             .bodyValue(object { val members = listOf("test member 1", "test member 2", "test member 3") })
             .exchange()
             .expectStatus().isNoContent
+            .expectBody().isEmpty
 
         argumentCaptor<Room> {
             verify(repository).save(capture())
@@ -188,5 +194,114 @@ class RoomIT: BaseIT() {
                 assertThat(it.id).isEqualTo("member2")
                 assertThat(it.name).isEqualTo("test member 2")
             }
+    }
+
+    @Test
+    fun getRoomSettings() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        val response = web.get().uri("room/$ROOM_KEY/settings")
+            .exchange()
+            .expectStatus().isOk
+            .responseBody<RoomSettings>()
+
+        assertThat(response.rounding).isEqualTo(10.0)
+        assertThat(response.currency).isEqualTo(HUF)
+    }
+
+    @Test
+    fun updateRoomSettings() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        web.put().uri("room/$ROOM_KEY/settings")
+            .bodyValue(object {
+                val rounding = 100.0
+                val currency = "EUR"
+            })
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().isEmpty
+
+        argumentCaptor<Room> {
+            verify(repository).save(capture())
+            assertThat(firstValue.rounding).isEqualTo(100.0)
+            assertThat(firstValue.currency).isEqualTo(EUR)
+        }
+    }
+
+    @Test
+    fun addMemberToExistingRoom() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY))
+
+        web.put().uri("room/$ROOM_KEY/members")
+            .bodyValue(object {
+                val name = "new member"
+                val includedPaymentIds = listOf("member1payment1", "member2payment2")
+            })
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().isEmpty
+
+        argumentCaptor<Room> {
+            verify(repository).save(capture())
+            var id: String? = null
+            assertThat(firstValue.members).hasSize(3)
+                .anySatisfy {
+                    assertThat(it.name).isEqualTo("new member")
+                    assertThat(it.payments).isEmpty()
+                    assertThat(it.debts).isNotEmpty
+                    id = it.id
+                }.anyMatch {
+                    it.payments.any { payment -> payment.id == "member1payment1" && id in payment.includedMemberIds }
+                }.anyMatch {
+                    it.payments.any { payment -> payment.id == "member2payment2" && id in payment.includedMemberIds }
+                }
+        }
+    }
+
+    @Test
+    fun deleteMember() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
+            testMember(id = "2", payments = listOf(testPayment(value = 400.0, includedMemberIds = listOf("1"), active = false))),
+            testMember(id = "3", payments = emptyList()),
+        )))
+
+        web.delete().uri("room/$ROOM_KEY/members/3")
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().isEmpty
+
+        argumentCaptor<Room> {
+            verify(repository).save(capture())
+            assertThat(firstValue.members).hasSize(2)
+                .noneMatch { it.id == "3" }
+        }
+    }
+
+    @Test
+    fun deleteIncludedMember() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
+            testMember(id = "2", payments = listOf(testPayment(value = 400.0, includedMemberIds = listOf("1", "3")))),
+            testMember(id = "3", payments = emptyList()),
+        )))
+
+        web.delete().uri("room/$ROOM_KEY/members/3")
+            .exchange()
+            .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun deleteMemberWithPayment() {
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
+            testMember(id = "2", payments = listOf(testPayment(value = 400.0, includedMemberIds = listOf("1"), active = false))),
+            testMember(id = "3", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
+        )))
+
+        web.delete().uri("room/$ROOM_KEY/members/3")
+            .exchange()
+            .expectStatus().isBadRequest
     }
 }

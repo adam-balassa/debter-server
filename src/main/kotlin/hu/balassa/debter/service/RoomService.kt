@@ -1,18 +1,19 @@
 package hu.balassa.debter.service
 
+import hu.balassa.debter.dto.request.AddMemberRequest
 import hu.balassa.debter.dto.request.AddMembersRequest
 import hu.balassa.debter.dto.request.CreateRoomRequest
 import hu.balassa.debter.dto.response.CreateRoomResponse
 import hu.balassa.debter.dto.response.MemberResponse
 import hu.balassa.debter.dto.response.MemberSummary
 import hu.balassa.debter.dto.response.RoomDetailsResponse
+import hu.balassa.debter.dto.response.RoomSettings
 import hu.balassa.debter.dto.response.RoomSummary
 import hu.balassa.debter.mapper.ModelDtoMapper
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
-import hu.balassa.debter.util.generateRoomKey
 import hu.balassa.debter.util.generateUUID
 import hu.balassa.debter.util.loadRoom
 import hu.balassa.debter.util.logger
@@ -25,7 +26,8 @@ import java.time.ZonedDateTime
 @Service
 class RoomService(
     private val repository: DebterRepository,
-    private val mapper: ModelDtoMapper
+    private val mapper: ModelDtoMapper,
+    private val debtService: DebtService
 ) {
 
     private val log = logger<RoomService>()
@@ -69,5 +71,37 @@ class RoomService(
 
     fun getMembers(roomKey: String): List<MemberResponse> = repository.loadRoom(roomKey) { room ->
         room.members.map { MemberResponse(it.id, it.name) }
+    }
+
+    fun getRoomSettings(roomKey: String): RoomSettings = repository.loadRoom(roomKey) { room ->
+        RoomSettings(room.currency, room.rounding)
+    }
+
+    fun updateRoomSettings(roomKey: String, settings: RoomSettings) = repository.useRoom(roomKey) {
+        it.currency = settings.currency
+        it.rounding = settings.rounding
+        debtService.arrangeDebts(it)
+    }
+
+    fun addMemberToExistingRoom(roomKey: String, addMemberRequest: AddMemberRequest) = repository.useRoom(roomKey) { room ->
+        val newMember = defaultMember().apply { name = addMemberRequest.name }
+        room.members = room.members.toMutableList().apply { add(newMember) }
+
+        val payments = room.members.flatMap { it.payments }
+        addMemberRequest.includedPaymentIds.forEach { id ->
+            val payment = payments.find { it.id == id } ?: throw IllegalArgumentException("No payment found with id $id")
+            payment.includedMemberIds = payment.includedMemberIds.toMutableList().apply { add(newMember.id) }
+        }
+
+        debtService.arrangeDebts(room)
+    }
+
+    fun deleteMemberFromRoom(roomKey: String, memberId: String) = repository.useRoom(roomKey) { room ->
+        if (room.members.any { it.payments.any { payment -> memberId in payment.includedMemberIds } })
+            throw IllegalArgumentException("Can't delete member who was included in a payment")
+        if (room.members.find { it.id == memberId }?.payments?.isNotEmpty() != false)
+            throw IllegalArgumentException("The requested member should exist and should not have payments")
+
+        room.members = room.members.filter { it.id != memberId }
     }
 }
