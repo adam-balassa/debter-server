@@ -18,6 +18,7 @@ import hu.balassa.debter.util.testPayment
 import hu.balassa.debter.util.testRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
+import org.assertj.core.api.Assertions.within
 import org.assertj.core.data.Offset.offset
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -226,6 +227,9 @@ class RoomIT: BaseIT() {
             verify(repository).save(capture())
             assertThat(firstValue.rounding).isEqualTo(100.0)
             assertThat(firstValue.currency).isEqualTo(EUR)
+            assertThat(firstValue.members.flatMap { it.payments }).allSatisfy {
+                assertThat(it.convertedValue).isCloseTo(20.0 / 348.177726, within(0.000001))
+            }
         }
     }
 

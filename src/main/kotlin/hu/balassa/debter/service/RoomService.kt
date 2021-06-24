@@ -1,5 +1,6 @@
 package hu.balassa.debter.service
 
+import hu.balassa.debter.client.ExchangeClient
 import hu.balassa.debter.dto.request.AddMemberRequest
 import hu.balassa.debter.dto.request.AddMembersRequest
 import hu.balassa.debter.dto.request.CreateRoomRequest
@@ -10,13 +11,13 @@ import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.dto.response.RoomSettings
 import hu.balassa.debter.dto.response.RoomSummary
 import hu.balassa.debter.mapper.ModelDtoMapper
+import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
 import hu.balassa.debter.util.generateUUID
 import hu.balassa.debter.util.loadRoom
-import hu.balassa.debter.util.logger
 import hu.balassa.debter.util.memberDebt
 import hu.balassa.debter.util.memberSum
 import hu.balassa.debter.util.useRoom
@@ -27,11 +28,9 @@ import java.time.ZonedDateTime
 class RoomService(
     private val repository: DebterRepository,
     private val mapper: ModelDtoMapper,
-    private val debtService: DebtService
+    private val debtService: DebtService,
+    private val exchangeClient: ExchangeClient
 ) {
-
-    private val log = logger<RoomService>()
-
     fun getRoomDetails(roomKey: String): RoomDetailsResponse = repository.loadRoom(roomKey) { room ->
         mapper.roomToRoomDetailsResponse(room)
     }
@@ -78,8 +77,14 @@ class RoomService(
     }
 
     fun updateRoomSettings(roomKey: String, settings: RoomSettings) = repository.useRoom(roomKey) {
-        it.currency = settings.currency
-        it.rounding = settings.rounding
+        val (currency, rounding) = settings
+        if (it.currency != currency) {
+            it.currency = currency
+            recalculateRealValues(it)
+        }
+        if (it.rounding != rounding) {
+            it.rounding = rounding
+        }
         debtService.arrangeDebts(it)
     }
 
@@ -103,5 +108,11 @@ class RoomService(
             throw IllegalArgumentException("The requested member should exist and should not have payments")
 
         room.members = room.members.filter { it.id != memberId }
+    }
+
+    private fun recalculateRealValues(room: Room) {
+        room.members.flatMap { it.payments }.forEach {
+            it.convertedValue = exchangeClient.convert(it.currency, room.currency, it.value)
+        }
     }
 }
