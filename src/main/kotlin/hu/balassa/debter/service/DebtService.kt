@@ -13,10 +13,8 @@ import hu.balassa.debter.util.loadRoom
 import hu.balassa.debter.util.memberDebt
 import hu.balassa.debter.util.memberIdToName
 import hu.balassa.debter.util.memberSum
-import org.springframework.stereotype.Service
 import kotlin.math.absoluteValue
 
-@Service
 open class DebtService(private val repository: DebterRepository) {
 
     fun getDebts(roomKey: String): GetDebtsResponse = repository.loadRoom(roomKey) { room ->

@@ -21,7 +21,7 @@ import org.mapstruct.Mapping
 import org.mapstruct.Mappings
 import org.mapstruct.Named
 
-@Mapper(componentModel = "spring", )
+@Mapper
 interface ModelDtoMapper {
     @Mapping(source = "key", target = "roomKey")
     fun roomToCreateRoomResponse(room: Room): CreateRoomResponse

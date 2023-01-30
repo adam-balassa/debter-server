@@ -2,23 +2,14 @@ package hu.balassa.debter.service
 
 import hu.balassa.debter.client.ExchangeClient
 import hu.balassa.debter.dto.request.AddPaymentRequest
-import hu.balassa.debter.dto.response.GetPaymentResponse
 import hu.balassa.debter.dto.response.GetPaymentsResponse
 import hu.balassa.debter.dto.response.MemberIncluded
-import hu.balassa.debter.dto.response.PaymentResponse
-import hu.balassa.debter.dto.response.RoomDetailsResponse
 import hu.balassa.debter.mapper.ModelDtoMapper
 import hu.balassa.debter.model.Payment
 import hu.balassa.debter.repository.DebterRepository
-import hu.balassa.debter.util.generateUUID
-import hu.balassa.debter.util.loadRoom
-import hu.balassa.debter.util.memberIdToName
-import hu.balassa.debter.util.paymentsWithMembers
-import hu.balassa.debter.util.useRoom
-import org.springframework.stereotype.Service
+import hu.balassa.debter.util.*
 import java.time.ZonedDateTime
 
-@Service
 class PaymentService(
     private val repository: DebterRepository,
     private val mapper: ModelDtoMapper,

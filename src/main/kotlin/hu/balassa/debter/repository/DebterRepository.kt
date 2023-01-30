@@ -2,11 +2,7 @@ package hu.balassa.debter.repository
 
 import hu.balassa.debter.config.DynamoDbConfig
 import hu.balassa.debter.model.Room
-import hu.balassa.debter.service.RoomService
 import hu.balassa.debter.util.generateRoomKey
-import hu.balassa.debter.util.generateUUID
-import hu.balassa.debter.util.logger
-import org.springframework.stereotype.Repository
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import software.amazon.awssdk.enhanced.dynamodb.Key
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema
@@ -20,7 +16,6 @@ interface DebterRepository {
 }
 
 
-@Repository
 class RecipeRepositoryImpl(
     db: DynamoDbEnhancedClient
 ): DebterRepository {

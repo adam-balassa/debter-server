@@ -4,27 +4,15 @@ import hu.balassa.debter.client.ExchangeClient
 import hu.balassa.debter.dto.request.AddMemberRequest
 import hu.balassa.debter.dto.request.AddMembersRequest
 import hu.balassa.debter.dto.request.CreateRoomRequest
-import hu.balassa.debter.dto.response.CreateRoomResponse
-import hu.balassa.debter.dto.response.MemberResponse
-import hu.balassa.debter.dto.response.MemberSummary
-import hu.balassa.debter.dto.response.RoomDetailsResponse
-import hu.balassa.debter.dto.response.RoomSettings
-import hu.balassa.debter.dto.response.RoomSummary
+import hu.balassa.debter.dto.response.*
 import hu.balassa.debter.mapper.ModelDtoMapper
-import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.repository.DebterRepository
-import hu.balassa.debter.util.generateUUID
-import hu.balassa.debter.util.loadRoom
-import hu.balassa.debter.util.memberDebt
-import hu.balassa.debter.util.memberSum
-import hu.balassa.debter.util.useRoom
-import org.springframework.stereotype.Service
+import hu.balassa.debter.util.*
 import java.time.ZonedDateTime
 
-@Service
 class RoomService(
     private val repository: DebterRepository,
     private val mapper: ModelDtoMapper,
