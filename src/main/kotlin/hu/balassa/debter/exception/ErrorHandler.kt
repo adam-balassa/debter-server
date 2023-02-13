@@ -23,8 +23,8 @@ private fun invalidRequest(exception: ValidationException) = ApiGatewayResponse.
 
 private fun internalServerError(exception: Exception) = ApiGatewayResponse.build {
     statusCode = 500
-    objectBody = ErrorResponse("Internal server error", exception.localizedMessage)
-}
+    objectBody = ErrorResponse("Internal server error", exception.message ?: "Something went wrong")
+}.also { exception.printStackTrace() }
 
 data class ErrorResponse(
     val error: String,

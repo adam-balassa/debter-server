@@ -69,7 +69,7 @@ open class DynamoDbStaticConfig: DynamoDbConfig() {
     }
 }
 
-public open class DynamoDbProductionConfig: DynamoDbConfig() {
+open class DynamoDbProductionConfig: DynamoDbConfig() {
     override fun dynamoDB(): DynamoDbEnhancedClient {
         return super.dynamoDB()
     }
@@ -78,5 +78,4 @@ public open class DynamoDbProductionConfig: DynamoDbConfig() {
         .builder()
         .region(EU_CENTRAL_1)
         .build()
-
 }

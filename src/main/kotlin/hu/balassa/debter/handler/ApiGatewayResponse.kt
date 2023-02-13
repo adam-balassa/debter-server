@@ -1,10 +1,11 @@
 package hu.balassa.debter.handler
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import java.nio.charset.StandardCharsets
 import java.util.*
 
-class ApiGatewayResponse(
+data class ApiGatewayResponse(
     val statusCode: Int,
     val body: String?,
     val headers: Map<String, String>,
@@ -14,7 +15,7 @@ class ApiGatewayResponse(
     }
 
     class Builder {
-        private val objectMapper = jacksonObjectMapper()
+        private val objectMapper = objectMapper()
 
         var statusCode: Int = 200
         var rawBody: String? = null

@@ -1,6 +1,6 @@
 package hu.balassa.debter.client
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import hu.balassa.debter.handler.objectMapper
 import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Currency.EUR
 import org.apache.http.client.utils.URIBuilder
@@ -24,7 +24,7 @@ open class ExchangeClient (
         HttpRequest.newBuilder(URI(uri)).GET().build().let { request ->
             HttpClient.newHttpClient().send(request) {
                 mapping(ofInputStream()) {
-                    jacksonObjectMapper().readValue(it, ExchangeRates::class.java)
+                    objectMapper().readValue(it, ExchangeRates::class.java)
                 }
             }.body()
         }

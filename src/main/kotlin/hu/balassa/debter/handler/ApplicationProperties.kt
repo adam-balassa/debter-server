@@ -17,7 +17,7 @@ class ApplicationProperties(resourceFile: String) {
             else valueFromPath(
                 it as? Map<String, Any> 
                     ?: throw Exception("Value not found at path ${path[0]}.${path[1]}"),
-                path.subList(1, path.size - 1)
+                path.subList(1, path.size)
             )
         } ?: throw Exception("Value not found at path ${path[0]}")
 

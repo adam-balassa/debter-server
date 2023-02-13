@@ -1,0 +1,105 @@
+org: adambalassa
+app: debter-server
+service: debter-server
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: java11
+  profile: serverless
+  region: eu-central-1
+  environment:
+    DYNAMODB_TABLE: debter
+  timeout: 12
+  httpApi:
+    cors: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:CreateTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+        - Effect: Allow
+          Action:
+            - dynamodb:ListTables
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/*"
+
+package:
+  artifact: build/libs/debter-0.0.1-SNAPSHOT.jar
+
+layers:
+  dependencies:
+    path: build/layer
+
+functions:
+  getRoomDetails:
+    handler: hu.balassa.debter.handler.GetRoomDetails
+    events:
+      - httpApi:
+          path: /room/{roomKey}
+          method: get
+    layers: [{ Ref: DependenciesLambdaLayer }]
+
+  getRoomSummary:
+    handler: hu.balassa.debter.handler.GetRoomSummary
+    events:
+      - httpApi:
+          path: /room/{roomKey}/summary
+          method: get
+    layers: [{ Ref: DependenciesLambdaLayer }]
+
+  createRoom:
+    handler: hu.balassa.debter.handler.CreateRoom
+    events:
+      - httpApi:
+          path: /room
+          method: post
+    layers: [{ Ref: DependenciesLambdaLayer }]
+
+  addMembers:
+    handler: hu.balassa.debter.handler.AddMembers
+    events:
+      - httpApi:
+          path: /room/{roomKey}/members
+          method: post
+    layers: [ { Ref: DependenciesLambdaLayer } ]
+
+  addMemberToExistingRoom:
+    handler: hu.balassa.debter.handler.AddMemberToExistingRoom
+    events:
+      - httpApi:
+          path: /room/{roomKey}/members
+          method: put
+    layers: [ { Ref: DependenciesLambdaLayer } ]
+
+  getMembers:
+    handler: hu.balassa.debter.handler.GetMembers
+    events:
+      - httpApi:
+          path: /room/{roomKey}/members
+          method: get
+    layers: [{ Ref: DependenciesLambdaLayer }]
+
+  getRoomSettings:
+    handler: hu.balassa.debter.handler.GetRoomSettings
+    events:
+      - httpApi:
+          path: /room/{roomKey}/settings
+          method: get
+    layers: [ { Ref: DependenciesLambdaLayer } ]
+
+  updateRoomSettings:
+    handler: hu.balassa.debter.handler.UpdateRoomSettings
+    events:
+      - httpApi:
+          path: /room/{roomKey}/settings
+          method: put
+    layers: [ { Ref: DependenciesLambdaLayer } ]
