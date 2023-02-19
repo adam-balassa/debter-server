@@ -22,10 +22,11 @@ abstract class DynamoDbConfig {
 
     open fun dynamoDB(): DynamoDbEnhancedClient {
         val db = dynamoDbClient()
-
-        if (!db.listTables().tableNames().contains(tableName)) {
-            createTable(db)
-        }
+        try {
+            if (!db.listTables().tableNames().contains(tableName)) {
+                createTable(db)
+            }
+        } catch(e: Exception) {}
 
         return DynamoDbEnhancedClient.builder().dynamoDbClient(db).build()
     }

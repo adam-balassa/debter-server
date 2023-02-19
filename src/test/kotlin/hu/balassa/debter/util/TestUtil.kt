@@ -1,16 +1,6 @@
 package hu.balassa.debter.util
 
-import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import hu.balassa.debter.model.Currency
-import hu.balassa.debter.model.DebtArrangement
-import hu.balassa.debter.model.Member
-import hu.balassa.debter.model.Payment
-import hu.balassa.debter.model.Room
-import org.springframework.core.io.ClassPathResource
-import org.springframework.test.web.reactive.server.WebTestClient
-import java.io.File
-import java.nio.charset.StandardCharsets.UTF_8
+import hu.balassa.debter.model.*
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -77,18 +67,18 @@ fun dateOf(
     hour: Int = 12, minute: Int = 30, second: Int = 0
 ) = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, 0, ZoneId.of("CET"))
 
-
-inline fun <reified T> WebTestClient.ResponseSpec.responseBody() =
-    expectBody(T::class.java).returnResult().responseBody!!
-
-inline fun <reified T> WebTestClient.ResponseSpec.responseBodyList() =
-    expectBodyList(T::class.java).returnResult().responseBody!!
-
-inline fun <reified T> loadJsonFile(fileName: String) =
-    jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .readValue(getFile(fileName), T::class.java)
-
-fun loadJsonFile(fileName: String): String = getFile(fileName)!!.readLines(UTF_8).joinToString("")
-
-
-fun getFile(fileName: String): File? = ClassPathResource("TEST_MOCK/$fileName").file
+//
+//inline fun <reified T> WebTestClient.ResponseSpec.responseBody() =
+//    expectBody(T::class.java).returnResult().responseBody!!
+//
+//inline fun <reified T> WebTestClient.ResponseSpec.responseBodyList() =
+//    expectBodyList(T::class.java).returnResult().responseBody!!
+//
+//inline fun <reified T> loadJsonFile(fileName: String) =
+//    jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+//        .readValue(getFile(fileName), T::class.java)
+//
+//fun loadJsonFile(fileName: String): String = getFile(fileName)!!.readLines(UTF_8).joinToString("")
+//
+//
+//fun getFile(fileName: String): File? = ClassPathResource("TEST_MOCK/$fileName").file

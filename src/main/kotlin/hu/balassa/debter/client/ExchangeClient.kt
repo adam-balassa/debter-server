@@ -3,31 +3,29 @@ package hu.balassa.debter.client
 import hu.balassa.debter.handler.objectMapper
 import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Currency.EUR
-import org.apache.http.client.utils.URIBuilder
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse.BodySubscribers.mapping
-import java.net.http.HttpResponse.BodySubscribers.ofInputStream
+import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit.SECONDS
+
 
 open class ExchangeClient (
     private val baseUrl: String,
     private val apiKey: String
 ) {
-    private val exchangeRates = lazy<ExchangeRates> {
-        val uri = URIBuilder().apply {
-            host = baseUrl
-            path = "/api/latest"
-            addParameter("access_key", apiKey)
-            addParameter("format", "1")
-        }.toString()
-        HttpRequest.newBuilder(URI(uri)).GET().build().let { request ->
-            HttpClient.newHttpClient().send(request) {
-                mapping(ofInputStream()) {
-                    objectMapper().readValue(it, ExchangeRates::class.java)
-                }
-            }.body()
-        }
+    private val httpClient = OkHttpClient.Builder().connectTimeout(5, SECONDS) .build()
+    private val exchangeRates = lazy {
+        val url = HttpUrl.Builder()
+            .scheme("http")
+            .host(baseUrl)
+            .addEncodedPathSegments("api/latest")
+            .addQueryParameter("access_key", apiKey)
+            .addQueryParameter("format", "1")
+            .build()
+        val request = Request.Builder().url(url).get().build()
+        val response = httpClient.newCall(request).execute()
+        check(response.isSuccessful) { "Failed to load conversion rates" }
+        objectMapper().readValue(response.body().byteStream(), ExchangeRates::class.java)
     }
 
     fun convert(from: Currency, to: Currency, value: Double): Double {

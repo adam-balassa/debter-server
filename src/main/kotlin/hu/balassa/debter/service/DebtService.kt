@@ -64,7 +64,7 @@ open class DebtService(private val repository: DebterRepository) {
         val (claims, debts) = memberDebts.partition { it.debt < 0.0 }
         val debtArranger = DebtArranger(claims, debts, room.rounding)
         val arrangements = debtArranger.arrange()
-
+        println("debt arrangement calculated")
         setMemberDebts(room, arrangements)
     }
 
