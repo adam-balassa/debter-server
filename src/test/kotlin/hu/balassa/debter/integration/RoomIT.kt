@@ -67,7 +67,7 @@ class RoomIT: BaseIT() {
         web.post().pattern("room/{roomKey}/members").pathParam("roomKey", ROOM_KEY)
             .bodyValue(object { val members = listOf("test member 1", "test member 2", "test member 3") })
             .exchange()
-            .expectStatus().isNoContent
+            .expectStatus().isCreated
             .expectBody().isEmpty
 
         argumentCaptor<Room> {

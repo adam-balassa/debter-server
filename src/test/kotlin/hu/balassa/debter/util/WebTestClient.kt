@@ -23,6 +23,7 @@ class WebTestClient(private val handler: Handler) {
     fun get(): WebTestClient { method = "GET"; return this }
     fun post(): WebTestClient { method = "POST"; return this }
     fun put(): WebTestClient { method = "PUT"; return this }
+    fun patch(): WebTestClient { method = "PATCH"; return this }
     fun delete(): WebTestClient { method = "DELETE"; return this }
     fun pattern(uri: String): WebTestClient { path = "/$uri"; return this }
     fun pathParam(key: String, value: String): WebTestClient {
@@ -76,6 +77,7 @@ class WebTestClient(private val handler: Handler) {
     fun expectBody(): AssertBody = object: AssertBody {
         override val isEmpty: Unit get() { assertThat(responseString).isNullOrEmpty() }
     }
+
 
     interface AssertStatus {
         val isOk: WebTestClient

@@ -54,7 +54,7 @@ class Router(private val event: APIGatewayV2HTTPEvent) {
             requestBodyType
         )
         val result = handleRequest(request)
-        return if (result == Unit) sendResponse(204, null)
+        return if (result == Unit) sendResponse(if (method == "POST") 201 else 204, null)
         else sendResponse(if (method == "POST") 201 else 200, result)
     }
 
