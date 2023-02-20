@@ -1,8 +1,12 @@
 package hu.balassa.debter.util
 
+import hu.balassa.debter.handler.objectMapper
 import hu.balassa.debter.model.*
+import java.io.File
+import java.io.InputStream
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import kotlin.text.Charsets.UTF_8
 
 fun testRoom(
     key: String = "TESTKEY",
@@ -67,18 +71,12 @@ fun dateOf(
     hour: Int = 12, minute: Int = 30, second: Int = 0
 ) = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, 0, ZoneId.of("CET"))
 
-//
-//inline fun <reified T> WebTestClient.ResponseSpec.responseBody() =
-//    expectBody(T::class.java).returnResult().responseBody!!
-//
-//inline fun <reified T> WebTestClient.ResponseSpec.responseBodyList() =
-//    expectBodyList(T::class.java).returnResult().responseBody!!
-//
-//inline fun <reified T> loadJsonFile(fileName: String) =
-//    jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-//        .readValue(getFile(fileName), T::class.java)
-//
-//fun loadJsonFile(fileName: String): String = getFile(fileName)!!.readLines(UTF_8).joinToString("")
-//
-//
-//fun getFile(fileName: String): File? = ClassPathResource("TEST_MOCK/$fileName").file
+
+inline fun <reified T> loadJsonFile(fileName: String) =
+    objectMapper().readValue(readFile(fileName), T::class.java)
+
+//fun loadJsonFile(fileName: String): String = readFile(fileName)!!.readAllBytes().joinToString("")
+
+
+fun readFile(fileName: String): InputStream? =
+    Thread.currentThread().contextClassLoader.getResourceAsStream("TEST_MOCK/$fileName")

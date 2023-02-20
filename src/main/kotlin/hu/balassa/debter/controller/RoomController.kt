@@ -4,10 +4,14 @@ import hu.balassa.debter.dto.request.AddMemberRequest
 import hu.balassa.debter.dto.request.AddMembersRequest
 import hu.balassa.debter.dto.request.CreateRoomRequest
 import hu.balassa.debter.dto.response.*
+import hu.balassa.debter.handler.Application
 import hu.balassa.debter.handler.Router
-import hu.balassa.debter.handler.roomService
 
-fun registerRoomController(app: Router) {
+fun Application.registerRoomController(app: Router) {
+    app.get("/room/{roomKey}") {
+        roomService.getRoomDetails(pathVariable("roomKey"))
+    }
+
     app.get("/room/{roomKey}/details") {
         roomService.getRoomDetails(pathVariable("roomKey"))
     }

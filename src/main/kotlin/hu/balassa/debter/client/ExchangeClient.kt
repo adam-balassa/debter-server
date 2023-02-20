@@ -1,5 +1,6 @@
 package hu.balassa.debter.client
 
+import hu.balassa.debter.handler.Mockable
 import hu.balassa.debter.handler.objectMapper
 import hu.balassa.debter.model.Currency
 import hu.balassa.debter.model.Currency.EUR
@@ -8,13 +9,20 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit.SECONDS
 
-
-open class ExchangeClient (
-    private val baseUrl: String,
-    private val apiKey: String
+@Mockable
+class ExchangeClient (
+    private val baseUrl: String? = null,
+    private val apiKey: String? = null
 ) {
     private val httpClient = OkHttpClient.Builder().connectTimeout(5, SECONDS) .build()
-    private val exchangeRates = lazy {
+    private val exchangeRates = lazy { requestExchangeRates()!! }
+
+    fun convert(from: Currency, to: Currency, value: Double): Double {
+        return value * loadExchangeRate(from, to)
+    }
+
+    fun requestExchangeRates(): ExchangeRates? {
+        baseUrl ?: return null
         val url = HttpUrl.Builder()
             .scheme("http")
             .host(baseUrl)
@@ -25,11 +33,7 @@ open class ExchangeClient (
         val request = Request.Builder().url(url).get().build()
         val response = httpClient.newCall(request).execute()
         check(response.isSuccessful) { "Failed to load conversion rates" }
-        objectMapper().readValue(response.body().byteStream(), ExchangeRates::class.java)
-    }
-
-    fun convert(from: Currency, to: Currency, value: Double): Double {
-        return value * loadExchangeRate(from, to)
+        return objectMapper().readValue(response.body().byteStream(), ExchangeRates::class.java)
     }
 
     private fun loadExchangeRate(from: Currency, to: Currency): Double {

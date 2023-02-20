@@ -17,26 +17,25 @@ class Router(private val event: APIGatewayV2HTTPEvent) {
 
     inline fun <reified REQ : Any, RES> post(pattern: String, noinline handleRequest: Request<REQ>.() -> RES) =
         matchRequest(pattern, "POST") {
-            executeRequest("GET", REQ::class, handleRequest)
+            executeRequest("POST", REQ::class, handleRequest)
         }
 
     inline fun <reified REQ : Any, RES> put(pattern: String, noinline handleRequest: Request<REQ>.() -> RES) =
         matchRequest(pattern, "PUT") {
-            executeRequest("GET", REQ::class, handleRequest)
+            executeRequest("PUT", REQ::class, handleRequest)
         }
 
     inline fun <reified REQ : Any, RES> patch(pattern: String, noinline handleRequest: Request<REQ>.() -> RES) =
         matchRequest(pattern, "PATCH") {
-            executeRequest("GET", REQ::class, handleRequest)
+            executeRequest("PATCH", REQ::class, handleRequest)
         }
 
     fun <RES> delete(pattern: String, handleRequest: Request<Any>.() -> RES) =
         matchRequest(pattern, "DELETE") {
-            executeRequest("GET", Any::class, handleRequest)
+            executeRequest("DELETE", Any::class, handleRequest)
         }
 
     fun matchRequest(pattern: String, method: String, callback: () -> APIGatewayV2HTTPResponse) {
-        println("$method $pattern\t ${response != null} ${event.requestContext.http.method != method} ${!matchRoute(event.requestContext.http.path, pattern)}")
         if (response != null) return
         if (event.requestContext.http.method != method) return
         if (!matchRoute(event.requestContext.http.path, pattern)) return
@@ -55,7 +54,7 @@ class Router(private val event: APIGatewayV2HTTPEvent) {
             requestBodyType
         )
         val result = handleRequest(request)
-        return if (result == Unit) sendResponse(if (method == "POST") 201 else 200, null)
+        return if (result == Unit) sendResponse(204, null)
         else sendResponse(if (method == "POST") 201 else 200, result)
     }
 
@@ -75,7 +74,12 @@ class Router(private val event: APIGatewayV2HTTPEvent) {
             get(): T {
                 bodyString ?: throw IllegalArgumentException("Request body is missing")
                 return objectMapper.readValue(bodyString, bodyType.java).also {
-                    validator.validate(it)
+                    val violations = validator.validate(it)
+                    if (violations.isNotEmpty())
+                        throw IllegalArgumentException(violations.first().run {
+                            val invalidField = propertyPath.joinToString(".")
+                            "Invalid field $invalidField: $message"
+                        })
                 }
             }
 

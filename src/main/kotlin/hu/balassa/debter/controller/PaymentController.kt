@@ -1,10 +1,10 @@
 package hu.balassa.debter.controller
 
 import hu.balassa.debter.dto.request.AddPaymentRequest
+import hu.balassa.debter.handler.Application
 import hu.balassa.debter.handler.Router
-import hu.balassa.debter.handler.paymentService
 
-fun registerPaymentController(app: Router) {
+fun Application.registerPaymentController(app: Router) {
     app.get("/room/{roomKey}/payments") {
         paymentService.getPayments(pathVariable("roomKey"))
     }

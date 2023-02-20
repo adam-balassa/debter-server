@@ -1,12 +1,14 @@
 package hu.balassa.debter.repository
 
 import hu.balassa.debter.config.DynamoDbConfig
+import hu.balassa.debter.handler.Mockable
 import hu.balassa.debter.model.Room
 import hu.balassa.debter.util.generateRoomKey
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import software.amazon.awssdk.enhanced.dynamodb.Key
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema
 
+@Mockable
 interface DebterRepository {
     fun save(room: Room): Room
 
@@ -15,16 +17,16 @@ interface DebterRepository {
     fun findByKey(key: String): Room?
 }
 
-
+@Mockable
 class RecipeRepositoryImpl(
-    db: DynamoDbEnhancedClient
+    db: DynamoDbEnhancedClient?
 ): DebterRepository {
     companion object {
         private val tableSchema = TableSchema.fromBean(Room::class.java)
     }
 
     private val table by lazy {
-        db.table(DynamoDbConfig.tableName, tableSchema)
+        db!!.table(DynamoDbConfig.tableName, tableSchema)
     }
 
     private fun findAll(): Set<Room> = table.scan().items().toSet()

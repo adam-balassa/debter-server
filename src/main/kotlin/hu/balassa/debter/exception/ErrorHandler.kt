@@ -14,11 +14,11 @@ fun withErrorHandling(body: () -> APIGatewayV2HTTPResponse): APIGatewayV2HTTPRes
     catch (e: Exception) { internalServerError(e) }
 
 
-private fun badRequest(exception: IllegalArgumentException)= sendResponse(404,
+private fun badRequest(exception: IllegalArgumentException)= sendResponse(400,
     ErrorResponse("Bad request", exception.message ?: "Illegal arguments provided")
 ).also { log.error("Bad request\n${ ExceptionUtils.getStackTrace(exception) }") }
 
-private fun invalidRequest(exception: ValidationException) = sendResponse(404,
+private fun invalidRequest(exception: ValidationException) = sendResponse(400,
     ErrorResponse("Bad request", exception.localizedMessage ?: "Invalid request body")
 ).also { log.error("Invalid request\n${ ExceptionUtils.getStackTrace(exception) }") }
 
