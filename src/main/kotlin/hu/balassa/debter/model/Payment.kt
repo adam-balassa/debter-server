@@ -13,8 +13,28 @@ class Payment {
     lateinit var note: String
     lateinit var date: ZonedDateTime
     var active by Delegates.notNull<Boolean>()
-    lateinit var includedMemberIds: List<String>
+    @Deprecated("Use `split` instead")
+    var includedMemberIds: List<String>? = null
+    var split: List<Split>? = null
     override fun toString(): String {
-        return "Payment(id='$id', value=$value, currency=$currency, convertedValue=$convertedValue, note='$note', date=$date, active=$active, includedMemberIds=$includedMemberIds)"
+        return "Payment(id='$id', value=$value, currency=$currency, convertedValue=$convertedValue, note='$note', date=$date, active=$active, split=$split)"
+    }
+}
+
+val Payment.safeSplit: List<Split> get() =
+    split ?: includedMemberIds?.let {
+        it.map { id -> Split(id) }
+    } ?: throw IllegalStateException("Both split and included members are null")
+
+
+@DynamoDbBean
+class Split() {
+    lateinit var memberId: String
+    var units by Delegates.notNull<Int>()
+    override fun toString(): String = "Split(memberId=$memberId unit=$units)"
+
+    constructor(memberId: String, units: Int = 1): this() {
+        this.memberId = memberId
+        this.units = units
     }
 }

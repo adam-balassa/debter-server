@@ -9,6 +9,8 @@ import hu.balassa.debter.mapper.ModelDtoMapper
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.Split
+import hu.balassa.debter.model.safeSplit
 import hu.balassa.debter.repository.DebterRepository
 import hu.balassa.debter.util.*
 import java.time.ZonedDateTime
@@ -83,14 +85,17 @@ class RoomService(
         val payments = room.members.flatMap { it.payments }
         addMemberRequest.includedPaymentIds.forEach { id ->
             val payment = payments.find { it.id == id } ?: throw IllegalArgumentException("No payment found with id $id")
-            payment.includedMemberIds = payment.includedMemberIds.toMutableList().apply { add(newMember.id) }
+            check(payment.safeSplit.all { it.units == 1 }) { "New member included in unequal split" }
+            payment.split = payment.safeSplit.toMutableList().apply {
+                add(Split(newMember.id))
+            }
         }
 
         debtService.arrangeDebts(room)
     }
 
     fun deleteMemberFromRoom(roomKey: String, memberId: String) = repository.useRoom(roomKey) { room ->
-        if (room.members.any { it.payments.any { payment -> memberId in payment.includedMemberIds } })
+        if (room.members.any { it.payments.any { it.safeSplit.any { memberId == it.memberId } } })
             throw IllegalArgumentException("Can't delete member who was included in a payment")
         if (room.members.find { it.id == memberId }?.payments?.isNotEmpty() != false)
             throw IllegalArgumentException("The requested member should exist and should not have payments")

@@ -40,16 +40,17 @@ fun testPayment(
     convertedValue: Double = 20.0,
     currency: Currency = Currency.HUF,
     date: ZonedDateTime = dateOf(2020, 9, 1),
-    includedMemberIds: List<String> = listOf("1", "2"),
+    includedMemberIds: List<String> = listOf("member1", "member2"),
     note: String = "test note",
-    value: Double = 20.0
+    value: Double = 20.0,
+    split: List<Split>? = null
 ) = Payment().also {
     it.id = id
     it.active = active
     it.convertedValue = convertedValue
     it.currency = currency
     it.date = date
-    it.includedMemberIds = includedMemberIds
+    it.split = split ?: includedMemberIds.map { id -> Split(id)}
     it.note = note
     it.value = value
 }

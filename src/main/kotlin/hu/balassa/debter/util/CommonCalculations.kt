@@ -2,7 +2,8 @@ package hu.balassa.debter.util
 
 import hu.balassa.debter.model.Member
 import hu.balassa.debter.model.Payment
-import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.Split
+import hu.balassa.debter.model.safeSplit
 
 fun memberDebt(member: Member, members: List<Member>): Double =
     if (member.debts.isEmpty()) {
@@ -22,3 +23,8 @@ fun memberIdToName(memberId: String, members: List<Member>) = members.find { it.
 
 fun paymentsWithMembers(members: List<Member>): List<Pair<String, Payment>> =
     members.flatMap { it.payments.map { payment -> it.id to payment } }
+
+fun shareForMembers(split: List<Split>, value: Double): Map<String, Double> {
+    val allUnits = split.sumOf { it.units }
+    return split.associate { it.memberId to (value / allUnits * it.units) }
+}

@@ -3,6 +3,7 @@ package hu.balassa.debter.integration
 import hu.balassa.debter.dto.response.GetPaymentsResponse
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.Split
 import hu.balassa.debter.util.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.byLessThan
@@ -31,7 +32,7 @@ class PaymentIT: BaseIT() {
                 val currency = "HUF"
                 val note = "test note"
                 val date = "2020-09-12T12:30:00+02:00"
-                val included = listOf("member1", "member2")
+                val split = listOf(Split("member1"), Split("member2"))
             })
             .exchange()
             .expectStatus().isCreated
@@ -44,7 +45,8 @@ class PaymentIT: BaseIT() {
                 assertThat(it.convertedValue).isEqualTo(10.0)
                 assertThat(it.currency).isEqualTo(HUF)
                 assertThat(it.date).isCloseTo(dateOf(2020, 9, 12, 12, 30), byLessThan(1, MINUTES))
-                assertThat(it.includedMemberIds).containsExactly("member1", "member2")
+                assertThat(it.split).extracting<String>{ it.memberId }.containsExactly("member1", "member2")
+                assertThat(it.split).extracting<Int>{ it.units }.containsExactly(1, 1)
                 assertThat(it.note).isEqualTo("test note")
                 assertThat(it.active).isTrue
             }
@@ -62,7 +64,7 @@ class PaymentIT: BaseIT() {
                 val currency = "EUR"
                 val note = "test note"
                 val date = "2020-09-12T12:30:00+02:00"
-                val included = listOf("member1", "member2")
+                val split = listOf(Split("member1"), Split("member2"))
             })
             .exchange()
             .expectStatus().isCreated
@@ -91,7 +93,7 @@ class PaymentIT: BaseIT() {
                 val currency = "HUF"
                 val note = "test note"
                 val date = "2020-09-12T12:30:00+02:00"
-                val included = listOf("member2")
+                val split = listOf(Split("member2"))
             })
             .exchange()
             .expectStatus().isCreated
@@ -117,8 +119,8 @@ class PaymentIT: BaseIT() {
         assertThat(response.activePayments).hasSize(1).allSatisfy {
             assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
-            assertThat(it.includedMembers).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
-            assertThat(it.includedMembers).extracting<Boolean> { it.included }.containsExactly(true, true)
+            assertThat(it.split).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
+            assertThat(it.split).extracting<Double> { it.share }.containsExactly(150.0, 150.0)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.value).isCloseTo(300.0, Offset.offset(.0001))
             assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
@@ -127,8 +129,8 @@ class PaymentIT: BaseIT() {
         assertThat(response.deletedPayments).hasSize(1).allSatisfy {
             assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
-            assertThat(it.includedMembers).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
-            assertThat(it.includedMembers).extracting<Boolean> { it.included }.containsExactly(true, false)
+            assertThat(it.split).extracting<String> { it.memberName }.containsExactly("test member 1")
+            assertThat(it.split).extracting<Double> { it.share }.containsExactly(400.0)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.value).isCloseTo(400.0, Offset.offset(.0001))
             assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
@@ -158,7 +160,10 @@ class PaymentIT: BaseIT() {
     fun revivePayment() {
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(
             key = ROOM_KEY,
-            members = listOf(testMember(id="member1", payments = listOf(testPayment("member1payment1", active = false))))
+            members = listOf(
+                testMember(id="member1", payments = listOf(testPayment("member1payment1", active = false))),
+                testMember(id="member2")
+            )
         ))
 
          web.patch().pattern("room/{roomKey}/payments/{paymentId}")

@@ -129,7 +129,6 @@ class RoomIT: BaseIT() {
             assertThat(it.active).isTrue
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, DAYS))
             assertThat(it.currency).isEqualTo(HUF)
-            assertThat(it.included).hasSize(2)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.realValue).isCloseTo(20.0, offset(.0001))
             assertThat(it.value).isCloseTo(20.0, offset(.0001))
@@ -249,9 +248,9 @@ class RoomIT: BaseIT() {
                     assertThat(it.debts).isNotEmpty
                     id = it.id
                 }.anyMatch {
-                    it.payments.any { payment -> payment.id == "member1payment1" && id in payment.includedMemberIds }
+                    it.payments.any { payment -> payment.id == "member1payment1" && payment.split!!.any { it.memberId == id && it.units == 1 } }
                 }.anyMatch {
-                    it.payments.any { payment -> payment.id == "member2payment2" && id in payment.includedMemberIds }
+                    it.payments.any { payment -> payment.id == "member2payment2" && payment.split!!.any { it.memberId == id && it.units == 1 } }
                 }
         }
     }

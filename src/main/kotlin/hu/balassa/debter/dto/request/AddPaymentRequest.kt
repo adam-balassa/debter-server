@@ -1,6 +1,7 @@
 package hu.balassa.debter.dto.request
 
 import hu.balassa.debter.model.Currency
+import hu.balassa.debter.model.Split
 import org.hibernate.validator.constraints.Length
 import java.time.ZonedDateTime
 import javax.validation.constraints.NotEmpty
@@ -26,5 +27,5 @@ data class AddPaymentRequest (
     val note: String,
 
     @field: NotEmpty
-    val included: List<String>
+    val split: List<Split>
 )

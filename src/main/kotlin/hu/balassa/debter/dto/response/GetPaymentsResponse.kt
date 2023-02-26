@@ -16,7 +16,7 @@ data class GetPaymentResponse (
     val currency: Currency,
     val note: String,
     val date: ZonedDateTime,
-    val includedMembers: List<MemberIncluded>
+    val split: List<MemberShare>
 )
 
-data class MemberIncluded(val memberName: String, val included: Boolean)
+data class MemberShare(val memberName: String, val share: Double)

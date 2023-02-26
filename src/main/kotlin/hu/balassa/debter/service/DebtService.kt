@@ -4,15 +4,9 @@ import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.dto.response.GetDebtMemberResponse
 import hu.balassa.debter.dto.response.GetDebtResponse
 import hu.balassa.debter.dto.response.GetDebtsResponse
-import hu.balassa.debter.model.DebtArrangement
-import hu.balassa.debter.model.Member
-import hu.balassa.debter.model.Payment
-import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.*
 import hu.balassa.debter.repository.DebterRepository
-import hu.balassa.debter.util.loadRoom
-import hu.balassa.debter.util.memberDebt
-import hu.balassa.debter.util.memberIdToName
-import hu.balassa.debter.util.memberSum
+import hu.balassa.debter.util.*
 import kotlin.math.absoluteValue
 
 open class DebtService(private val repository: DebterRepository) {
@@ -48,11 +42,12 @@ open class DebtService(private val repository: DebterRepository) {
 
     private fun checkForExistingDebtArrangement(newPayment: AddPaymentRequest, room: Room): Boolean {
         val member = room.members.find { it.id == newPayment.memberId }!!
+        val includedMemberId = if (newPayment.split.size == 1) newPayment.split[0].memberId else return false
         val suitableDebt = member.debts.find {
             it.value.isAround(newPayment.value, room.rounding) &&
                     !it.arranged &&
                     it.currency == newPayment.currency &&
-                    listOf(it.payeeId) == newPayment.included
+                    it.payeeId == includedMemberId
         } ?: return false
         suitableDebt.arranged = true
         return true
@@ -64,7 +59,7 @@ open class DebtService(private val repository: DebterRepository) {
         val (claims, debts) = memberDebts.partition { it.debt < 0.0 }
         val debtArranger = DebtArranger(claims, debts, room.rounding)
         val arrangements = debtArranger.arrange()
-        println("debt arrangement calculated")
+
         setMemberDebts(room, arrangements)
     }
 
@@ -86,39 +81,22 @@ open class DebtService(private val repository: DebterRepository) {
     }
 
     private fun getMemberDebts(members: List<Member>): List<SimpleMember> {
-        val simplePayments = paymentsToSimplePayment(members)
-
-        val memberSums = members.associate { it.id to 0.0 } + simplePayments
-            .groupBy { it.memberId }
-            .mapValues { payment -> payment.value.sumByDouble { it.value } }
-
-        val roomSum = memberSums.map { it.value }.sum()
-
-        val preferredAmount = roomSum / members.size
-        return memberSums.map { (memberId, sum) -> SimpleMember(memberId, preferredAmount - sum) }
-    }
-
-    private fun paymentsToSimplePayment(members: List<Member>): List<SimplePayment> {
-        val memberIds = members.map { it.id }
-        return members
-            .flatMap { member -> member.payments.map { member.id to it } }
-            .filter { it.second.active }
-            .flatMap { paymentToSimplePayments(it.first, it.second, memberIds) }
-
-    }
-
-    private fun paymentToSimplePayments(payerId: String, payment: Payment, members: List<String>): List<SimplePayment> {
-        val excludedMembers = members.filter { it !in payment.includedMemberIds }
-        return mutableListOf(SimplePayment(payerId, payment.convertedValue)).apply {
-            addAll(excludedMembers.map {
-                val amount = payment.convertedValue / payment.includedMemberIds.size
-                SimplePayment(it, amount)
-            })
+        val memberDebts = mutableMapOf<String, Double>().apply {
+            putAll(members.map { it.id to 0.0 })
         }
+        paymentsWithMembers(members)
+            .filter { (_, payment) -> payment.active }
+            .forEach { (memberId, payment) ->
+                shareForMembers(payment.safeSplit, payment.convertedValue).forEach { (memberWithDebt, debtValue) ->
+                    memberDebts[memberWithDebt] = memberDebts[memberWithDebt]!! + debtValue
+                }
+                memberDebts[memberId] = memberDebts[memberId]!! - payment.convertedValue
+            }
+
+        return memberDebts.map { (memberId, debt) -> SimpleMember(memberId, debt) }
     }
 }
 
-data class SimplePayment(val memberId: String, val value: Double)
 data class SimpleMember(val memberId: String, var debt: Double)
 data class SimpleDebtArrangement(val fromId: String, val toId: String, val amount: Double)
 

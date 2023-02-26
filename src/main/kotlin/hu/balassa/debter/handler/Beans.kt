@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PRO
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import hu.balassa.debter.client.ExchangeClient
+import hu.balassa.debter.config.DynamoDbConfig
 import hu.balassa.debter.config.DynamoDbProductionConfig
 import hu.balassa.debter.mapper.ModelDtoMapper
 import hu.balassa.debter.repository.DebterRepository
@@ -23,7 +24,7 @@ annotation class Mockable
 @Mockable
 class Application {
     val properties = ApplicationProperties("application.yml")
-    fun dbConfig() = DynamoDbProductionConfig()
+    fun dbConfig(): DynamoDbConfig = DynamoDbProductionConfig()
     fun debterRepository(db: DynamoDbEnhancedClient?): DebterRepository = RecipeRepositoryImpl(db)
     fun debtService(repository: DebterRepository) = DebtService(repository)
     fun mapper() = Mappers.getMapper(ModelDtoMapper::class.java)

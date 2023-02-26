@@ -2,10 +2,7 @@ package hu.balassa.debter.mapper
 
 import hu.balassa.debter.dto.request.AddPaymentRequest
 import hu.balassa.debter.dto.response.*
-import hu.balassa.debter.model.DebtArrangement
-import hu.balassa.debter.model.Member
-import hu.balassa.debter.model.Payment
-import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.*
 import hu.balassa.debter.util.paymentsWithMembers
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping
@@ -25,10 +22,7 @@ interface ModelDtoMapper {
     )
     fun roomToRoomDetailsResponse(room: Room): RoomDetailsResponse
 
-    @Mappings(
-        Mapping(source = "addPaymentRequest.included", target = "includedMemberIds"),
-        Mapping(target = "active", expression = "java(true)")
-    )
+    @Mappings(Mapping(target = "active", expression = "java(true)"))
     fun addPaymentRequestToPayment(addPaymentRequest: AddPaymentRequest, id: String, convertedValue: Double): Payment
 
     @Named("membersToPayments")
@@ -42,16 +36,12 @@ interface ModelDtoMapper {
         members.flatMap { it.debts.map { debt -> it.id to debt } }
             .map { debtArrangementToDebtResponse(it.second, it.first) }
 
-    @Mappings(
-        Mapping(source = "payment.convertedValue", target = "realValue"),
-        Mapping(source = "payment.includedMemberIds", target = "included")
-    )
+    @Mappings(Mapping(source = "payment.convertedValue", target = "realValue"))
     fun paymentToPaymentResponse(payment: Payment, memberId: String): PaymentResponse
 
-    fun paymentToGetPaymentResponse(payment: Payment, memberName: String, includedMembers: List<MemberIncluded>): GetPaymentResponse
+    @Mappings(Mapping(source = "split", target = "split"))
+    fun paymentToGetPaymentResponse(payment: Payment, memberName: String, split: List<MemberShare>): GetPaymentResponse
 
-    @Mappings(
-        Mapping(source = "debt.payeeId", target = "to")
-    )
+    @Mappings(Mapping(source = "debt.payeeId", target = "to"))
     fun debtArrangementToDebtResponse(debt: DebtArrangement, from: String): DebtResponse
 }

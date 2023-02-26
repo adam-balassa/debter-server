@@ -36,6 +36,5 @@ data class PaymentResponse (
     val realValue: Double,
     val note: String,
     val date: ZonedDateTime,
-    val active: Boolean,
-    val included: List<String>
+    val active: Boolean
 )
