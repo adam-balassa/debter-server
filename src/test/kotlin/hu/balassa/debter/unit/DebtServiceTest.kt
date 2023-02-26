@@ -1,6 +1,7 @@
 package hu.balassa.debter.unit
 
 import hu.balassa.debter.model.Currency.HUF
+import hu.balassa.debter.model.Split
 import hu.balassa.debter.service.DebtService
 import hu.balassa.debter.util.testDebt
 import hu.balassa.debter.util.testMember
@@ -68,6 +69,43 @@ class DebtServiceTest {
                 assertThat(it.currency).isEqualTo(HUF)
                 assertThat(it.arranged).isFalse
             }
+        }
+    }
+
+    @Test
+    fun testArrangementUnequalSplit() {
+        val room = testRoom(rounding = 10.0, members = listOf(
+            testMember(id = "1", payments = listOf(testPayment(convertedValue = 300.0, split = listOf(Split("1", 1), Split("2", 2)))), debts = emptyList()),
+            testMember(id = "2", payments = listOf(testPayment(convertedValue = 400.0, split = listOf(Split("1", 1), Split("4", 3)))), debts = emptyList()),
+            testMember(id = "3", payments = listOf(), debts = emptyList()),
+            testMember(id = "4", payments = listOf(), debts = emptyList()))
+        )
+
+        service.arrangeDebts(room)
+
+        assertThat(room.members).anySatisfy {
+            assertThat(it.id).isEqualTo("1")
+            assertThat(it.debts).isEmpty()
+        }.anySatisfy { member ->
+            assertThat(member.id).isEqualTo("2")
+            assertThat(member.debts).isEmpty()
+        }.anySatisfy { member ->
+            assertThat(member.id).isEqualTo("3")
+            assertThat(member.debts).isEmpty()
+        }.anySatisfy { member ->
+            assertThat(member.id).isEqualTo("4")
+            assertThat(member.debts).hasSize(2)
+                .anySatisfy {
+                    assertThat(it.payeeId).isEqualTo("1")
+                    assertThat(it.value).isEqualTo(100.0)
+                    assertThat(it.currency).isEqualTo(HUF)
+                    assertThat(it.arranged).isFalse
+                }.anySatisfy {
+                    assertThat(it.payeeId).isEqualTo("2")
+                    assertThat(it.value).isEqualTo(200.0)
+                    assertThat(it.currency).isEqualTo(HUF)
+                    assertThat(it.arranged).isFalse
+                }
         }
     }
 

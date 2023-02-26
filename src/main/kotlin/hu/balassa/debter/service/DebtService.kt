@@ -21,14 +21,17 @@ open class DebtService(private val repository: DebterRepository) {
                         member.name,
                         memberSum(member),
                         memberDebt(member, room.members),
-                        member.debts.map {
-                            GetDebtResponse(
-                                it.payeeId,
-                                memberIdToName(it.payeeId, room.members),
-                                it.value,
-                                it.arranged
-                            )
-                        })
+                        member.debts
+                            .filter { it.value > 0 }
+                            .map {
+                                GetDebtResponse(
+                                    it.payeeId,
+                                    memberIdToName(it.payeeId, room.members),
+                                    it.value,
+                                    it.arranged
+                                )
+                            }
+                    )
                 }
         )
     }
@@ -68,14 +71,16 @@ open class DebtService(private val repository: DebterRepository) {
         room.members.forEach { it.debts = emptyList() }
         room.members.forEach { member ->
             debts[member.id]?.let { memberDebts ->
-                member.debts = memberDebts.map {
-                    DebtArrangement().apply {
-                        payeeId = it.toId
-                        value = it.amount
-                        currency = room.currency
-                        arranged = false
+                member.debts = memberDebts
+                    .filter { it.amount > 0 }
+                    .map {
+                        DebtArrangement().apply {
+                            payeeId = it.toId
+                            value = it.amount
+                            currency = room.currency
+                            arranged = false
+                        }
                     }
-                }
             }
         }
     }

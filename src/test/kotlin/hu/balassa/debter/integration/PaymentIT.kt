@@ -32,7 +32,7 @@ class PaymentIT: BaseIT() {
                 val currency = "HUF"
                 val note = "test note"
                 val date = "2020-09-12T12:30:00+02:00"
-                val split = listOf(Split("member1"), Split("member2"))
+                val split = listOf(Split("member1"), Split("member2", 4))
             })
             .exchange()
             .expectStatus().isCreated
@@ -46,7 +46,7 @@ class PaymentIT: BaseIT() {
                 assertThat(it.currency).isEqualTo(HUF)
                 assertThat(it.date).isCloseTo(dateOf(2020, 9, 12, 12, 30), byLessThan(1, MINUTES))
                 assertThat(it.split).extracting<String>{ it.memberId }.containsExactly("member1", "member2")
-                assertThat(it.split).extracting<Int>{ it.units }.containsExactly(1, 1)
+                assertThat(it.split).extracting<Int>{ it.units }.containsExactly(1, 4)
                 assertThat(it.note).isEqualTo("test note")
                 assertThat(it.active).isTrue
             }
@@ -107,8 +107,8 @@ class PaymentIT: BaseIT() {
     @Test
     fun getPayments() {
         whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY, members = listOf(
-            testMember(id = "1", payments = listOf(testPayment(value = 300.0, includedMemberIds = listOf("1", "2")))),
-            testMember(id = "2", payments = listOf(testPayment(value = 400.0, includedMemberIds = listOf("1"), active = false))),
+            testMember(id = "1", payments = listOf(testPayment(value = 300.0, split = listOf(Split("1", 1), Split("2", 2))))),
+            testMember(id = "2", payments = listOf(testPayment(value = 400.0, split = listOf(Split("1", 130), Split("2", 270)), active = false))),
         )))
 
         val response = web.get().pattern("room/{roomKey}/payments").pathParam("roomKey", ROOM_KEY)
@@ -120,7 +120,7 @@ class PaymentIT: BaseIT() {
             assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
             assertThat(it.split).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
-            assertThat(it.split).extracting<Double> { it.share }.containsExactly(150.0, 150.0)
+            assertThat(it.split).extracting<Double> { it.share }.containsExactly(100.0, 200.0)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.value).isCloseTo(300.0, Offset.offset(.0001))
             assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
@@ -129,8 +129,8 @@ class PaymentIT: BaseIT() {
         assertThat(response.deletedPayments).hasSize(1).allSatisfy {
             assertThat(it.currency).isEqualTo(HUF)
             assertThat(it.date).isCloseTo(dateOf(2020, 9, 1), byLessThan(1, ChronoUnit.DAYS))
-            assertThat(it.split).extracting<String> { it.memberName }.containsExactly("test member 1")
-            assertThat(it.split).extracting<Double> { it.share }.containsExactly(400.0)
+            assertThat(it.split).extracting<String> { it.memberName }.containsExactly("test member 1", "test member 2")
+            assertThat(it.split).extracting<Double> { it.share }.containsExactly(130.0, 270.0)
             assertThat(it.note).isEqualTo("test note")
             assertThat(it.value).isCloseTo(400.0, Offset.offset(.0001))
             assertThat(it.convertedValue).isCloseTo(20.0, Offset.offset(.0001))
