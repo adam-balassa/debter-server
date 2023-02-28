@@ -49,12 +49,13 @@ class RoomService(
     }
 
     fun getRoomSummary(roomKey: String): RoomSummary = repository.loadRoom(roomKey) { room ->
+        val memberSummary = room.members.map { MemberSummary(it.name, memberSum(it), memberDebt(it, room.members)) }
         RoomSummary(
             roomKey,
             room.name,
-            room.members.flatMap { member -> member.payments }.filter { it.active }.sumOf { it.convertedValue },
+            memberSummary.sumOf { it.sum },
             room.currency,
-            room.members.map { MemberSummary(it.name, memberSum(it), memberDebt(it, room.members)) }
+            memberSummary
         )
     }
 

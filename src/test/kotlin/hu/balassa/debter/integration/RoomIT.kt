@@ -5,6 +5,7 @@ import hu.balassa.debter.exception.ErrorResponse
 import hu.balassa.debter.model.Currency.EUR
 import hu.balassa.debter.model.Currency.HUF
 import hu.balassa.debter.model.Room
+import hu.balassa.debter.model.Split
 import hu.balassa.debter.util.dateOf
 import hu.balassa.debter.util.testMember
 import hu.balassa.debter.util.testPayment
@@ -149,7 +150,16 @@ class RoomIT: BaseIT() {
 
     @Test
     fun getRoomSummary() {
-        whenever(repository.findByKey(anyString())).thenReturn(testRoom(ROOM_KEY))
+        whenever(repository.findByKey(ROOM_KEY)).thenReturn(testRoom(ROOM_KEY,
+            members = listOf(
+                testMember(id = "1", payments = listOf(
+                    testPayment(convertedValue = 300.0, split = listOf(Split("1", 1), Split("2", 2))),
+                    testPayment(convertedValue = 150.0, split = listOf(Split("2", 1)), note = "Debt arrangement")
+                )),
+                testMember(id = "2", payments = listOf(
+                    testPayment(convertedValue = 400.0, split = listOf(Split("1", 130), Split("2", 270)), active = false))),
+            )
+        ))
 
         val response = web.get()
             .pattern("room/{roomKey}/summary")
@@ -159,15 +169,20 @@ class RoomIT: BaseIT() {
             .responseBody<RoomSummary>()
 
         assertThat(response.currency).isEqualTo(HUF)
-        assertThat(response.sum).isEqualTo(80.0)
+        assertThat(response.sum).isEqualTo(300.0)
         assertThat(response.roomKey).isEqualTo(ROOM_KEY)
         assertThat(response.name).isEqualTo("Test room")
         assertThat(response.memberSummary).hasSize(2)
-            .allSatisfy {
-                assertThat(it.sum).isEqualTo(40.0)
+            .anySatisfy {
+                assertThat(it.name).isEqualTo("test member 1")
+                assertThat(it.sum).isEqualTo(300.0)
                 assertThat(it.debt).isEqualTo(20.0)
             }
-            .extracting<String> { it.name }.containsExactly("test member 1", "test member 2")
+            .anySatisfy {
+                assertThat(it.name).isEqualTo("test member 2")
+                assertThat(it.sum).isEqualTo(0.0)
+                assertThat(it.debt).isEqualTo(20.0)
+            }
     }
 
     @Test

@@ -17,7 +17,10 @@ fun memberDebt(member: Member, members: List<Member>): Double =
     }
 
 
-fun memberSum(member: Member) = member.payments.filter { it.active }.sumOf { it.convertedValue }
+fun memberSum(member: Member) = member.payments
+    .filter { it.active }
+    .filter { !it.isDebtSettlement }
+    .sumOf { it.convertedValue }
 
 fun memberIdToName(memberId: String, members: List<Member>) = members.find { it.id == memberId }?.name ?: ""
 
@@ -28,3 +31,6 @@ fun shareForMembers(split: List<Split>, value: Double): Map<String, Double> {
     val allUnits = split.sumOf { it.units }
     return split.associate { it.memberId to (value / allUnits * it.units) }
 }
+
+private val Payment.isDebtSettlement: Boolean
+    get() = safeSplit.size == 1 && note.lowercase().contains("debt")
